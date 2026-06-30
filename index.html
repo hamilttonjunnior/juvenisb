@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Volei Pro - Juvenis B - Hamilton Jr</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700&display=swap" rel="stylesheet">
     <!-- Biblioteca para exportar o PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -93,7 +93,7 @@
         .btn-ace { background: #2980b9; color: white; }
         .btn-neutral { background: #64748b; color: white; }
 
-        /* Relatório Scout */
+        /* Relatório Scout na Interface */
         .scout-report-section { margin-top: 25px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; overflow-x: auto; }
         .scout-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; text-align: center; color: var(--white); }
         .scout-table th, .scout-table td { border: 1px solid var(--border); padding: 8px; }
@@ -102,6 +102,21 @@
         .scout-controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .btn-clear-scout { background: #334155; color: #cbd5e1; border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
+
+        /* Div oculta usada apenas para estruturar a geração do PDF A4 P&B */
+        #pdf-render-template { display: none; background: white; color: black; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20mm; box-sizing: border-box; }
+        .pdf-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }
+        .pdf-logo { font-size: 24px; font-weight: 800; border: 3px solid black; padding: 5px 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .pdf-title-block { text-align: right; }
+        .pdf-title-block h2 { margin: 0; font-size: 18px; text-transform: uppercase; }
+        .pdf-title-block p { margin: 4px 0 0; font-size: 11px; color: #555; }
+        .pdf-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; font-size: 12px; border-bottom: 1px dashed #ccc; padding-bottom: 12px; }
+        .pdf-athlete-card { border: 1px solid black; border-radius: 6px; padding: 12px; margin-bottom: 15px; page-break-inside: avoid; }
+        .pdf-athlete-header { display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid black; padding-bottom: 5px; margin-bottom: 8px; font-size: 13px; }
+        .pdf-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px; margin-bottom: 8px; }
+        .pdf-metric-box { background: #f5f5f5; padding: 6px; text-align: center; border-radius: 4px; border: 1px solid #e0e0e0; }
+        .pdf-metric-box strong { display: block; font-size: 14px; margin-top: 2px; }
+        .pdf-feedback-box { background: #fafafa; border-left: 3px solid black; padding: 6px 10px; font-size: 11px; font-style: italic; color: #333; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -203,7 +218,7 @@
     </div>
 </section>
 
-<!-- MÓDULO SCOUT COM EXPORTADOR PDF FIXADO -->
+<!-- MÓDULO SCOUT -->
 <section id="scout" class="section">
     <h3 id="scout-atleta-nome" style="text-align: center; color: var(--success);">Selecione uma atleta</h3>
     
@@ -245,12 +260,8 @@
         </div>
     </div>
 
-    <!-- Container Alvo do PDF -->
-    <div class="scout-report-section" id="scout-pdf-area">
-        <div id="pdf-header-info" style="display:none; color:black; font-family:sans-serif; margin-bottom:15px;">
-            <h2 style="margin:0; color:#1e3a8a;">RELATÓRIO DE SCOUT - FC ACADÉMICOS</h2>
-            <p id="pdf-game-details" style="margin:5px 0; font-size:12px; font-weight:bold;"></p>
-        </div>
+    <!-- Tabela Live na Interface App -->
+    <div class="scout-report-section">
         <table class="scout-table" id="table-to-print">
             <thead>
                 <tr>
@@ -262,7 +273,7 @@
     </div>
     
     <div class="scout-controls">
-        <button class="btn-pdf" onclick="exportScoutPDF()">📄 Exportar Scout (PDF)</button>
+        <button class="btn-pdf" onclick="generateProfessionalReportPDF()">📄 Gerar Relatório Profissional</button>
         <button class="btn-clear-scout" onclick="resetScoutData()">↺ Zerar Scout</button>
     </div>
 </section>
@@ -272,6 +283,24 @@
     <div id="logs-container" style="max-width: 500px; margin: auto;"></div>
     <button onclick="clearLogs()" style="width:100%; max-width: 500px; display: block; margin: 20px auto; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold;">LIMPAR HISTÓRICO</button>
 </section>
+
+<!-- TEMPLATE DE RELATÓRIO A4 OCULTO (GERADOR DO PDF ANALÍTICO P&B) -->
+<div id="pdf-render-template">
+    <div class="pdf-header">
+        <div class="pdf-logo">III.V MEDIA</div>
+        <div class="pdf-title-block">
+            <h2>Relatório Técnico de Rendimento Individual</h2>
+            <p>Análise Avançada de Scout e Eficiência Tática por Atleta</p>
+        </div>
+    </div>
+    <div class="pdf-meta-grid">
+        <div><strong>Competição:</strong> <span id="pdf-meta-game"></span></div>
+        <div><strong>Oponente:</strong> <span id="pdf-meta-adv"></span></div>
+        <div><strong>Localização:</strong> <span id="pdf-meta-pav"></span></div>
+        <div><strong>Data / Horário:</strong> <span id="pdf-meta-datetime"></span></div>
+    </div>
+    <div id="pdf-athletes-container"></div>
+</div>
 
 <!-- SISTEMA INTEGRADO COM FIREBASE -->
 <script type="module">
@@ -412,7 +441,6 @@
         if(navigator.vibrate) navigator.vibrate(50);
     };
 
-    // Nova Função para limpar as estatísticas do Scout
     window.resetScoutData = () => {
         if(confirm("Tem certeza que deseja ZERAR todo o relatório de scout deste jogo?")) {
             state.scoutData = {};
@@ -458,32 +486,96 @@
         });
     }
 
-    // Exportação Otimizada contra quebra de tabela horizontal
-    window.exportScoutPDF = () => {
-        const element = document.getElementById('scout-pdf-area');
-        const headerInfo = document.getElementById('pdf-header-info');
-        const table = document.getElementById('table-to-print');
+    // Gerador de Parecer Técnico Baseado em Regras Lógicas de Eficiência
+    function getTechnicalFeedback(s) {
+        let totalAtk = s.atk_ponto + s.atk_minus + s.atk_plus;
+        let totalServ = s.serv_plus + s.serv_minus + s.serv_ace;
+        let feedbacks = [];
+
+        if (totalAtk > 0) {
+            if (s.atk_ponto > s.atk_minus) {
+                feedbacks.push("Alta eficiência ofensiva com boa margem de finalização.");
+            } else if (s.atk_minus > s.atk_ponto) {
+                feedbacks.push("Atenção ao desperdício no ataque: registou um volume de erros superior aos pontos directos.");
+            }
+        }
+        if (totalServ > 0) {
+            if (s.serv_minus > (s.serv_plus + s.serv_ace)) {
+                feedbacks.push("Necessidade urgente de trabalhar a consistência do serviço para reduzir erros forçados.");
+            } else if (s.serv_ace > 2) {
+                feedbacks.push("Serviço agressivo gerando quebra constante na receção adversária (Excelente percentagem de Aces).");
+            }
+        }
+        if (s.bloco > 2) {
+            feedbacks.push("Excelente tempo de reação e posicionamento no bloqueio de rede.");
+        }
+        if (s.rec_minus > s.rec_plus) {
+            feedbacks.push("Ajustar posicionamento de base e leitura de trajetória na receção de bola.");
+        }
+
+        return feedbacks.join(" ") || "Volume de jogo reduzido para amostragem estatística profunda neste set/partida.";
+    }
+
+    // Nova Função Estruturada para Gerar o PDF Analítico Profissional A4 Vertical
+    window.generateProfessionalReportPDF = () => {
+        const container = document.getElementById('pdf-athletes-container');
+        container.innerHTML = "";
+
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
-        
-        document.getElementById('pdf-game-details').innerText = `Jogo: FCA vs ${state.advName} | Data: ${state.gameDate} às ${state.gameTime} | Local: ${pav}`;
-        
-        headerInfo.style.display = 'block';
-        table.style.color = 'black';
-        table.style.width = '100%';
-        document.querySelectorAll('#table-to-print th').forEach(th => th.style.background = '#e2e8f0');
-        
+        document.getElementById('pdf-meta-game').innerText = state.gameName;
+        document.getElementById('pdf-meta-adv').innerText = state.advName;
+        document.getElementById('pdf-meta-pav').innerText = pav;
+        document.getElementById('pdf-meta-datetime').innerText = `${state.gameDate} - ${state.gameTime}`;
+
+        state.atletas.forEach(a => {
+            const s = (state.scoutData && state.scoutData[a.n]) || { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, def_plus:0, bloco:0 };
+            
+            // Filtra atletas que entraram em quadra ou tiveram ações computadas
+            let totalAcoes = Object.values(s).reduce((acc, curr) => acc + curr, 0);
+            if(totalAcoes === 0) return;
+
+            const feedback = getTechnicalFeedback(s);
+
+            container.innerHTML += `
+                <div class="pdf-athlete-card">
+                    <div class="pdf-athlete-header">
+                        <div>Nº ${a.n} — ${a.nome}</div>
+                        <div style="font-size: 11px; text-transform: uppercase; color: #555;">Posição/Função: ${state.roles[a.n] || 'Não Def.'}</div>
+                    </div>
+                    <div class="pdf-metrics-grid">
+                        <div class="pdf-metric-box">Serviços (+ / -)<strong>${s.serv_plus} / ${s.serv_minus}</strong></div>
+                        <div class="pdf-metric-box">Aces Directos<strong>${s.serv_ace}</strong></div>
+                        <div class="pdf-metric-box">Receção (+ / -)<strong>${s.rec_plus} / ${s.rec_minus}</strong></div>
+                        <div class="pdf-metric-box">Ataques (Ponto / Erro)<strong>${s.atk_ponto} / ${s.atk_minus}</strong></div>
+                    </div>
+                    <div class="pdf-metrics-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="pdf-metric-box" style="text-align: left; padding-left: 15px;">Ações de Defesa Corretas: <strong>${s.def_plus}</strong></div>
+                        <div class="pdf-metric-box" style="text-align: left; padding-left: 15px;">Bloqueios Efectivos: <strong>${s.bloco}</strong></div>
+                    </div>
+                    <div class="pdf-feedback-box">
+                        <strong>Parecer Técnico Integrado:</strong> ${feedback}
+                    </div>
+                </div>
+            `;
+        });
+
+        if(container.innerHTML === "") {
+            container.innerHTML = "<p style='text-align:center; padding: 20px; font-style:italic;'>Nenhuma ação ou estatística foi computada para o plantel neste jogo até ao momento.</p>";
+        }
+
+        const reportWindow = document.getElementById('pdf-render-template');
+        reportWindow.style.display = 'block';
+
         const opt = {
-            margin:       [8, 8, 8, 8],
-            filename:     `Scout_FCA_vs_${state.advName}_${state.gameDate}.pdf`,
+            margin:       10,
+            filename:     `Relatorio_Performance_${state.advName}_${state.gameDate}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // Mantido em paisagem para caber a largura total
+            html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().set(opt).from(element).save().then(() => {
-            headerInfo.style.display = 'none';
-            table.style.color = 'var(--white)';
-            document.querySelectorAll('#table-to-print th').forEach(th => th.style.background = 'rgba(15, 23, 42, 0.8)');
+        html2pdf().set(opt).from(reportWindow).save().then(() => {
+            reportWindow.style.display = 'none';
         });
     };
 
@@ -677,6 +769,8 @@
             <div class="log-item">${l}</div>
         `).join('') || "<p style='text-align:center; color:#64748b; font-size:0.8rem;'>Sem registos salvos de sets.</p>";
     }
+
+    window.clearLogs = () => { if(confirm("Limpar todo o histórico de jogo?")) { state.logs = []; sync(); } };
 </script>
 </body>
 </html>
