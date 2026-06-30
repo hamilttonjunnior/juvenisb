@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Volei Pro - Juvenis B - Hamilton Jr</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { 
             --bg: #0b101d; --card: rgba(30, 41, 59, 0.7); --primary: #38bdf8; 
@@ -99,21 +98,8 @@
         .scout-table th { background: rgba(15, 23, 42, 0.8); font-weight: bold; color: var(--primary); }
         
         .scout-controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-        .btn-pdf { background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-print-tab { background: #22c55e; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .btn-clear-scout { background: #334155; color: #cbd5e1; border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
-
-        /* Div renderizadora oculta via deslocamento absoluto (evita bugs de corte do html2pdf) */
-        #pdf-render-template { position: absolute; left: -9999px; top: 0; width: 170mm; background: white; color: black; font-family: Arial, sans-serif; padding: 15mm; }
-        .pdf-header { border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }
-        .pdf-title-block h2 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .pdf-title-block p { margin: 4px 0 0; font-size: 11px; color: #555; font-weight: bold; text-transform: uppercase; }
-        .pdf-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; font-size: 11px; border-bottom: 1px dashed #ccc; padding-bottom: 12px; }
-        .pdf-athlete-card { border: 1px solid black; border-radius: 6px; padding: 12px; margin-bottom: 18px; page-break-inside: avoid; background: #fff; }
-        .pdf-athlete-header { display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid black; padding-bottom: 5px; margin-bottom: 10px; font-size: 13px; }
-        .pdf-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px; margin-bottom: 8px; }
-        .pdf-metric-box { background: #f9f9f9; padding: 6px; text-align: center; border-radius: 4px; border: 1px solid #ddd; }
-        .pdf-metric-box strong { display: block; font-size: 14px; margin-top: 2px; color: #000; }
-        .pdf-feedback-box { background: #f5f5f5; border-left: 3px solid black; padding: 8px 10px; font-size: 11px; font-style: italic; color: #222; margin-top: 8px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -139,6 +125,7 @@
     <div class="nav-item" id="btn-logs" onclick="showTab('logs')">LOGS</div>
 </div>
 
+<!-- ABA CONVOCAÇÃO -->
 <section id="convocacao" class="section active">
     <div class="game-info-card">
         <label>Nome do Adversário / Jogo</label>
@@ -174,10 +161,12 @@
     </div>
 </section>
 
+<!-- ABA CONFIGURAÇÃO DE QUADRA -->
 <section id="sets" class="section">
     <div id="sets-container"></div>
 </section>
 
+<!-- ABA LIVE JOGO -->
 <section id="live" class="section">
     <div style="text-align:center; margin-bottom: 15px;">
         <select id="live-set-selector" onchange="changeSet(this.value)" style="width: auto; background: var(--card); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border); color: var(--primary); font-weight: 800;">
@@ -212,6 +201,7 @@
     </div>
 </section>
 
+<!-- MÓDULO SCOUT -->
 <section id="scout" class="section">
     <h3 id="scout-atleta-nome" style="text-align: center; color: var(--success);">Selecione uma atleta</h3>
     
@@ -253,6 +243,7 @@
         </div>
     </div>
 
+    <!-- Tabela Live na Interface App -->
     <div class="scout-report-section">
         <table class="scout-table" id="table-to-print">
             <thead>
@@ -265,32 +256,18 @@
     </div>
     
     <div class="scout-controls">
-        <button class="btn-pdf" onclick="generateProfessionalReportPDF()">📄 Gerar Relatório Profissional</button>
+        <button class="btn-print-tab" onclick="openPrintableReportWindow()">📄 Gerar Página de Impressão</button>
         <button class="btn-clear-scout" onclick="resetScoutData()">↺ Zerar Scout</button>
     </div>
 </section>
 
+<!-- ABA LOGS -->
 <section id="logs" class="section">
     <div id="logs-container" style="max-width: 500px; margin: auto;"></div>
     <button onclick="clearLogs()" style="width:100%; max-width: 500px; display: block; margin: 20px auto; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold;">LIMPAR HISTÓRICO</button>
 </section>
 
-<div id="pdf-render-template">
-    <div class="pdf-header">
-        <div class="pdf-title-block">
-            <h2>Relatório Técnico de Rendimento Individual</h2>
-            <p>Análise Avançada de Scout e Eficiência Tática por Atleta</p>
-        </div>
-    </div>
-    <div class="pdf-meta-grid">
-        <div><strong>Competição:</strong> <span id="pdf-meta-game"></span></div>
-        <div><strong>Oponente:</strong> <span id="pdf-meta-adv"></span></div>
-        <div><strong>Localização:</strong> <span id="pdf-meta-pav"></span></div>
-        <div><strong>Data / Horário:</strong> <span id="pdf-meta-datetime"></span></div>
-    </div>
-    <div id="pdf-athletes-container"></div>
-</div>
-
+<!-- SISTEMA INTEGRADO COM FIREBASE -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -488,7 +465,7 @@
         }
         if (totalServ > 0) {
             if (s.serv_minus > (s.serv_plus + s.serv_ace)) {
-                feedbacks.push("Necessidade urgente de trabalhar a consistência do serviço para reduzir erros forçados.");
+                feedbacks.push("Consistência do serviço abaixo do esperado: volume de falhas superior aos serviços táticos.");
             } else if (s.serv_ace > 2) {
                 feedbacks.push("Serviço agressivo gerando quebra constante na receção adversária (Excelente percentagem de Aces).");
             }
@@ -503,69 +480,87 @@
         return feedbacks.join(" ") || "Volume de jogo reduzido para amostragem estatística profunda neste set/partida.";
     }
 
-    window.generateProfessionalReportPDF = () => {
-        const container = document.getElementById('pdf-athletes-container');
-        container.innerHTML = "";
-
+    // Abertura Segura em Nova Aba com CSS de Impressão Nativo P&B A4 Vertical
+    window.openPrintableReportWindow = () => {
+        const printWindow = window.open('', '_blank');
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
-        document.getElementById('pdf-meta-game').innerText = state.gameName;
-        document.getElementById('pdf-meta-adv').innerText = state.advName;
-        document.getElementById('pdf-meta-pav').innerText = pav;
-        document.getElementById('pdf-meta-datetime').innerText = `${state.gameDate} - ${state.gameTime}`;
-
+        
+        let athletesHTML = "";
         state.atletas.forEach(a => {
             const s = (state.scoutData && state.scoutData[a.n]) || { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, def_plus:0, bloco:0 };
-            
             let totalAcoes = Object.values(s).reduce((acc, curr) => acc + curr, 0);
             if(totalAcoes === 0) return;
 
             const feedback = getTechnicalFeedback(s);
-
-            container.innerHTML += `
-                <div class="pdf-athlete-card">
-                    <div class="pdf-athlete-header">
-                        <div>Nº ${a.n} — ${a.nome}</div>
-                        <div style="font-size: 11px; text-transform: uppercase; color: #555;">Posição/Função: ${state.roles[a.n] || 'Não Def.'}</div>
+            athletesHTML += `
+                <div class="card">
+                    <div class="card-header">
+                        <span>Nº ${a.n} — ${a.nome}</span>
+                        <span style="font-size: 11px; font-weight: normal;">FUNÇÃO: ${state.roles[a.n] || 'NÃO DEF.'}</span>
                     </div>
-                    <div class="pdf-metrics-grid">
-                        <div class="pdf-metric-box">Serviços (+ / -)<strong>${s.serv_plus} / ${s.serv_minus}</strong></div>
-                        <div class="pdf-metric-box">Aces Directos<strong>${s.serv_ace}</strong></div>
-                        <div class="pdf-metric-box">Receção (+ / -)<strong>${s.rec_plus} / ${s.rec_minus}</strong></div>
-                        <div class="pdf-metric-box">Ataques (Ponto / Erro)<strong>${s.atk_ponto} / ${s.atk_minus}</strong></div>
+                    <div class="grid">
+                        <div class="box">Serviços (+ / -)<strong>${s.serv_plus} / ${s.serv_minus}</strong></div>
+                        <div class="box">Aces Directos<strong>${s.serv_ace}</strong></div>
+                        <div class="box">Receção (+ / -)<strong>${s.rec_plus} / ${s.rec_minus}</strong></div>
+                        <div class="box">Ataques (Ponto / Erro)<strong>${s.atk_ponto} / ${s.atk_minus}</strong></div>
                     </div>
-                    <div class="pdf-metrics-grid" style="grid-template-columns: 1fr 1fr;">
-                        <div class="pdf-metric-box" style="text-align: left; padding-left: 15px;">Ações de Defesa Corretas: <strong>${s.def_plus}</strong></div>
-                        <div class="pdf-metric-box" style="text-align: left; padding-left: 15px;">Bloqueios Efectivos: <strong>${s.bloco}</strong></div>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top: 5px;">
+                        <div class="box" style="text-align: left; padding-left: 12px;">Ações de Defesa Corretas: <strong>${s.def_plus}</strong></div>
+                        <div class="box" style="text-align: left; padding-left: 12px;">Bloqueios Efectivos: <strong>${s.bloco}</strong></div>
                     </div>
-                    <div class="pdf-feedback-box">
-                        <strong>Parecer Técnico Integrado:</strong> ${feedback}
-                    </div>
+                    <div class="feedback"><strong>Parecer Técnico Integrado:</strong> ${feedback}</div>
                 </div>
             `;
         });
 
-        if(container.innerHTML === "") {
-            container.innerHTML = "<p style='text-align:center; padding: 20px; font-style:italic;'>Nenhuma ação ou estatística foi computada para o plantel neste jogo até ao momento.</p>";
+        if(athletesHTML === "") {
+            athletesHTML = "<p style='text-align:center; font-style:italic; padding:30px;'>Sem dados estatísticos registados para este plantel.</p>";
         }
 
-        const reportWindow = document.getElementById('pdf-render-template');
-        // Mantém visível para o motor do html2pdf calcular as alturas perfeitamente antes da captura
-        reportWindow.style.position = 'relative';
-        reportWindow.style.left = '0';
-
-        const opt = {
-            margin:       10,
-            filename:     `Relatorio_Performance_${state.advName}_${state.gameDate}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, backgroundColor: '#ffffff', useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(reportWindow).save().then(() => {
-            // Move de volta para fora da tela após salvar
-            reportWindow.style.position = 'absolute';
-            reportWindow.style.left = '-9999px';
-        });
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Relatório de Scout — FCA vs ${state.advName}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; color: black; background: white; padding: 10mm; margin: 0; }
+                    .header { border-bottom: 3px solid black; padding-bottom: 10px; margin-bottom: 20px; }
+                    .header h1 { margin: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+                    .header p { margin: 5px 0 0; font-size: 11px; text-transform: uppercase; font-weight: bold; color: #444; }
+                    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+                    .card { border: 1px solid black; border-radius: 4px; padding: 12px; margin-bottom: 15px; page-break-inside: avoid; background: #fff; }
+                    .card-header { display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid black; padding-bottom: 4px; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; }
+                    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+                    .box { background: #f9f9f9; padding: 6px; text-align: center; border: 1px solid #ccc; font-size: 11px; border-radius: 2px; }
+                    .box strong { display: block; font-size: 13px; margin-top: 2px; }
+                    .feedback { background: #f5f5f5; border-left: 3px solid black; padding: 6px 10px; font-size: 11px; font-style: italic; margin-top: 8px; line-height: 1.4; }
+                    @media print {
+                        body { padding: 0; }
+                        .box { background: #fff !important; }
+                        .feedback { background: #fff !important; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Relatório Técnico de Rendimento Individual</h1>
+                    <p>Análise Avançada de Scout e Eficiência Tática por Atleta</p>
+                </div>
+                <div class="meta-grid">
+                    <div><strong>Competição:</strong> ${state.gameName}</div>
+                    <div><strong>Oponente:</strong> ${state.advName}</div>
+                    <div><strong>Localização:</strong> ${pav}</div>
+                    <div><strong>Data / Horário:</strong> ${state.gameDate} — ${state.gameTime}</div>
+                </div>
+                <div id="content">${athletesHTML}</div>
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() { window.print(); }, 300);
+                    };
+                <\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
     };
 
     window.gerarMensagem = () => {
