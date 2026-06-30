@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Volei Pro - Juvenis B - Hamilton Jr</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { 
             --bg: #0b101d; --card: rgba(30, 41, 59, 0.7); --primary: #38bdf8; 
@@ -40,9 +41,9 @@
         .role-select { background: #1e293b; color: var(--primary); border: none; font-size: 0.6rem; font-weight: bold; border-radius: 4px; padding: 2px; }
         
         #sets-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; padding: 10px; }
-        .set-mini-court { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 18px; }
+        .set-mini-court { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 18px; }
         .court-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-        .pos-box { background: var(--card); padding: 6px 2px; border-radius: 8px; text-align: center; }
+        .pos-box { background: rgba(15, 23, 42, 0.6); padding: 6px 2px; border-radius: 8px; text-align: center; border: 1px solid transparent; }
         .pos-box.occupied { border: 1px solid var(--primary); }
         
         .scoreboard { display: flex; justify-content: space-around; align-items: center; background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 1px solid var(--border); max-width: 400px; margin: 0 auto 20px; }
@@ -87,10 +88,12 @@
         .btn-ace { background: #2980b9; color: white; }
         .btn-neutral { background: #64748b; color: white; }
 
-        .scout-report-section { margin-top: 25px; background: var(--white); color: #000; border-radius: 16px; padding: 15px; overflow-x: auto; }
-        .scout-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; text-align: center; }
-        .scout-table th, .scout-table td { border: 1px solid #cbd5e1; padding: 6px; }
-        .scout-table th { background: #f1f5f9; font-weight: bold; }
+        /* Relatório Scout Mantendo Identidade Dark no App */
+        .scout-report-section { margin-top: 25px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; overflow-x: auto; }
+        .scout-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; text-align: center; color: var(--white); }
+        .scout-table th, .scout-table td { border: 1px solid var(--border); padding: 8px; }
+        .scout-table th { background: rgba(15, 23, 42, 0.8); font-weight: bold; color: var(--primary); }
+        .btn-pdf { width: 100%; max-width: 250px; margin: 15px auto 0 display: block; background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
@@ -116,7 +119,6 @@
     <div class="nav-item" id="btn-logs" onclick="showTab('logs')">LOGS</div>
 </div>
 
-<!-- ABA CONVOCAÇÃO -->
 <section id="convocacao" class="section active">
     <div class="game-info-card">
         <label>Nome do Adversário / Jogo</label>
@@ -152,12 +154,10 @@
     </div>
 </section>
 
-<!-- ABA CONFIGURAÇÃO DE QUADRA -->
 <section id="sets" class="section">
     <div id="sets-container"></div>
 </section>
 
-<!-- ABA LIVE JOGO -->
 <section id="live" class="section">
     <div style="text-align:center; margin-bottom: 15px;">
         <select id="live-set-selector" onchange="changeSet(this.value)" style="width: auto; background: var(--card); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border); color: var(--primary); font-weight: 800;">
@@ -192,7 +192,6 @@
     </div>
 </section>
 
-<!-- NOVA ABA INTEGRADA: SCOUT STATS -->
 <section id="scout" class="section">
     <h3 id="scout-atleta-nome" style="text-align: center; color: var(--success);">Selecione uma atleta</h3>
     
@@ -234,8 +233,12 @@
         </div>
     </div>
 
-    <div class="scout-report-section">
-        <table class="scout-table">
+    <div class="scout-report-section" id="scout-pdf-area">
+        <div id="pdf-header-info" style="display:none; color:black; font-family:sans-serif; margin-bottom:15px;">
+            <h2 style="margin:0; color:#1e3a8a;">RELATÓRIO DE SCOUT - FC ACADÉMICOS</h2>
+            <p id="pdf-game-details" style="margin:5px 0; font-size:12px; font-weight:bold;"></p>
+        </div>
+        <table class="scout-table" id="table-to-print">
             <thead>
                 <tr>
                     <th>Atleta</th><th>Serv(+)</th><th>Serv(-)</th><th>ACE</th><th>Rec(+)</th><th>Rec(-)</th><th>Atk Pnto</th><th>Atk Erro</th><th>Bloco</th>
@@ -244,20 +247,21 @@
             <tbody id="scout-table-body"></tbody>
         </table>
     </div>
+    
+    <div style="text-align: center;">
+        <button class="btn-pdf" onclick="exportScoutPDF()">📄 Exportar Scout (PDF)</button>
+    </div>
 </section>
 
-<!-- ABA LOGS -->
 <section id="logs" class="section">
     <div id="logs-container" style="max-width: 500px; margin: auto;"></div>
     <button onclick="clearLogs()" style="width:100%; max-width: 500px; display: block; margin: 20px auto; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold;">LIMPAR HISTÓRICO</button>
 </section>
 
-<!-- SISTEMA INTEGRADO COM FIREBASE -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Credenciais Isoladas e Mantidas Conforme o Banco de Dados Original
     const firebaseConfig = {
         apiKey: "AIzaSyA3OE3I9ZdW_jNUOh47_B9cikch4U3Sbz8",
         authDomain: "juvenisb-d67d3.firebaseapp.com",
@@ -287,13 +291,12 @@
             {n: 4, nome: "Barbara Fernandes"}, {n: 5, nome: "Beatriz Brito"}, {n: 6, nome: "Matilde Loureiro"},
             {n: 7, nome: "Maria Luisa Soutelo"}, {n: 8, nome: "Nataliia Karpets"}, {n: 9, nome: "Carolina Braga"}, {n: 10, nome: "Clara Pires"}
         ],
-        scoutData: {} // Extensão da Base de Dados para Estatísticas Real-Time
+        scoutData: {}
     };
 
     let liveState = { home: 0, away: 0, serving: 'home', currentLineup: [], currentSet: "1" };
     let selectedScoutAtleta = null;
 
-    // Escuta em tempo real do Firebase Firestore
     onSnapshot(doc(db, "gestao", "atual"), (snap) => {
         if(snap.exists()) {
             state = { ...state, ...snap.data() };
@@ -429,6 +432,36 @@
                 </tr>`;
         });
     }
+
+    // Função Avançada de Exportação Limpa para Impressão PDF
+    window.exportScoutPDF = () => {
+        const element = document.getElementById('scout-pdf-area');
+        const headerInfo = document.getElementById('pdf-header-info');
+        const table = document.getElementById('table-to-print');
+        const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
+        
+        document.getElementById('pdf-game-details').innerText = `Jogo: FCA vs ${state.advName} | Data: ${state.gameDate} às ${state.gameTime} | Local: ${pav}`;
+        
+        // Customização temporária para o PDF ficar legível e profissional em papel branco
+        headerInfo.style.display = 'block';
+        table.style.color = 'black';
+        document.querySelectorAll('#table-to-print th').forEach(th => th.style.background = '#e2e8f0');
+        
+        const opt = {
+            margin:       10,
+            filename:     `Scout_FCA_vs_${state.advName}_${state.gameDate}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Restaura as configurações de visualização originais do App escuro
+            headerInfo.style.display = 'none';
+            table.style.color = 'var(--white)';
+            document.querySelectorAll('#table-to-print th').forEach(th => th.style.background = 'rgba(15, 23, 42, 0.8)');
+        });
+    };
 
     window.gerarMensagem = () => {
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
@@ -602,7 +635,7 @@
                         return `
                         <div class="pos-box ${cur ? 'occupied' : ''}">
                             <label style="font-size:0.45rem; color:#94a3b8;">P${p}</label>
-                            <select onchange="updatePos('${id}', this.value)">
+                            <select onchange="updatePos('${id}', this.value)" style="font-size: 0.85rem;">
                                 <option value="">-</option>
                                 ${convocadas.map(a => {
                                     const jaUsada = usadasNesteSet.includes(String(a.n)) && cur != String(a.n);
