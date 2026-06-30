@@ -41,14 +41,12 @@
         .btn-remove { background: none; border: none; color: var(--accent); cursor: pointer; font-weight: bold; padding: 0 5px; }
         .role-select { background: #1e293b; color: var(--primary); border: none; font-size: 0.6rem; font-weight: bold; border-radius: 4px; padding: 2px; }
         
-        /* DESIGN CORRIGIDO DA QUADRA - VOLTANDO AO ORIGINAL SEM BLOCO BRANCO */
         #sets-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; padding: 10px; }
         .set-mini-court { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 12px; border-radius: 18px; }
         .court-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
         .pos-box { background: var(--card); padding: 6px 2px; border-radius: 8px; text-align: center; }
         .pos-box.occupied { border: 1px solid var(--primary); }
         
-        /* Correção específica para forçar o select a ficar transparente e escuro */
         .pos-box select { background: transparent !important; color: var(--white) !important; border: none !important; font-size: 1rem !important; font-weight: 800 !important; width: 100% !important; text-align: center !important; outline: none !important; appearance: none !important; -webkit-appearance: none !important; }
         .pos-box option { background-color: #1e293b; color: white; }
         .msg-regra { font-size: 0.65rem; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; min-height: 20px; line-height: 1.3; }
@@ -100,7 +98,10 @@
         .scout-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; text-align: center; color: var(--white); }
         .scout-table th, .scout-table td { border: 1px solid var(--border); padding: 8px; }
         .scout-table th { background: rgba(15, 23, 42, 0.8); font-weight: bold; color: var(--primary); }
-        .btn-pdf { width: 100%; max-width: 250px; margin: 15px auto 0; display: block; background: #e74c3c; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        
+        .scout-controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .btn-pdf { background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-clear-scout { background: #334155; color: #cbd5e1; border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -202,7 +203,7 @@
     </div>
 </section>
 
-<!-- MÓDULO SCOUT COM EXPORTADOR PDF -->
+<!-- MÓDULO SCOUT COM EXPORTADOR PDF FIXADO -->
 <section id="scout" class="section">
     <h3 id="scout-atleta-nome" style="text-align: center; color: var(--success);">Selecione uma atleta</h3>
     
@@ -260,8 +261,9 @@
         </table>
     </div>
     
-    <div style="text-align: center;">
+    <div class="scout-controls">
         <button class="btn-pdf" onclick="exportScoutPDF()">📄 Exportar Scout (PDF)</button>
+        <button class="btn-clear-scout" onclick="resetScoutData()">↺ Zerar Scout</button>
     </div>
 </section>
 
@@ -302,7 +304,7 @@
         roles: { 1: "PAS", 2: "PAS", 3: "ENT", 4: "ENT", 5: "ENT", 6: "ENT", 7: "OPO", 8: "CEN", 9: "CEN", 10: "CEN" },
         atletas: [
             {n: 1, nome: "Zita Macedo"}, {n: 2, nome: "Maria Luisa Baptista"}, {n: 3, nome: "Carla Rodriguez"},
-            {n: 4, font_weight:600, nome: "Barbara Fernandes"}, {n: 5, nome: "Beatriz Brito"}, {n: 6, nome: "Matilde Loureiro"},
+            {n: 4, nome: "Barbara Fernandes"}, {n: 5, nome: "Beatriz Brito"}, {n: 6, nome: "Matilde Loureiro"},
             {n: 7, nome: "Maria Luisa Soutelo"}, {n: 8, nome: "Nataliia Karpets"}, {n: 9, nome: "Carolina Braga"}, {n: 10, nome: "Clara Pires"}
         ],
         scoutData: {}
@@ -410,6 +412,15 @@
         if(navigator.vibrate) navigator.vibrate(50);
     };
 
+    // Nova Função para limpar as estatísticas do Scout
+    window.resetScoutData = () => {
+        if(confirm("Tem certeza que deseja ZERAR todo o relatório de scout deste jogo?")) {
+            state.scoutData = {};
+            sync();
+            alert("Scout zerado com sucesso!");
+        }
+    };
+
     function selectScoutAtleta(atleta) {
         selectedScoutAtleta = atleta;
         document.querySelectorAll('.scout-atleta-card').forEach(c => c.classList.remove('active'));
@@ -447,6 +458,7 @@
         });
     }
 
+    // Exportação Otimizada contra quebra de tabela horizontal
     window.exportScoutPDF = () => {
         const element = document.getElementById('scout-pdf-area');
         const headerInfo = document.getElementById('pdf-header-info');
@@ -457,14 +469,15 @@
         
         headerInfo.style.display = 'block';
         table.style.color = 'black';
+        table.style.width = '100%';
         document.querySelectorAll('#table-to-print th').forEach(th => th.style.background = '#e2e8f0');
         
         const opt = {
-            margin:       10,
+            margin:       [8, 8, 8, 8],
             filename:     `Scout_FCA_vs_${state.advName}_${state.gameDate}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // Mantido em paisagem para caber a largura total
         };
 
         html2pdf().set(opt).from(element).save().then(() => {
@@ -664,8 +677,6 @@
             <div class="log-item">${l}</div>
         `).join('') || "<p style='text-align:center; color:#64748b; font-size:0.8rem;'>Sem registos salvos de sets.</p>";
     }
-
-    window.clearLogs = () => { if(confirm("Limpar todo o histórico de jogo?")) { state.logs = []; sync(); } };
 </script>
 </body>
 </html>
