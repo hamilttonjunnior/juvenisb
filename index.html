@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Volei Pro - Juvenis B - Hamilton Jr</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;600;700&display=swap" rel="stylesheet">
-    <!-- Biblioteca para exportar o PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { 
@@ -103,20 +102,18 @@
         .btn-pdf { background: #e74c3c; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .btn-clear-scout { background: #334155; color: #cbd5e1; border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
 
-        /* Div oculta usada apenas para estruturar a geração do PDF A4 P&B */
-        #pdf-render-template { display: none; background: white; color: black; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20mm; box-sizing: border-box; }
-        .pdf-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }
-        .pdf-logo { font-size: 24px; font-weight: 800; border: 3px solid black; padding: 5px 15px; text-transform: uppercase; letter-spacing: 1px; }
-        .pdf-title-block { text-align: right; }
-        .pdf-title-block h2 { margin: 0; font-size: 18px; text-transform: uppercase; }
-        .pdf-title-block p { margin: 4px 0 0; font-size: 11px; color: #555; }
-        .pdf-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; font-size: 12px; border-bottom: 1px dashed #ccc; padding-bottom: 12px; }
-        .pdf-athlete-card { border: 1px solid black; border-radius: 6px; padding: 12px; margin-bottom: 15px; page-break-inside: avoid; }
-        .pdf-athlete-header { display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid black; padding-bottom: 5px; margin-bottom: 8px; font-size: 13px; }
+        /* Div renderizadora oculta via deslocamento absoluto (evita bugs de corte do html2pdf) */
+        #pdf-render-template { position: absolute; left: -9999px; top: 0; width: 170mm; background: white; color: black; font-family: Arial, sans-serif; padding: 15mm; }
+        .pdf-header { border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 20px; }
+        .pdf-title-block h2 { margin: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pdf-title-block p { margin: 4px 0 0; font-size: 11px; color: #555; font-weight: bold; text-transform: uppercase; }
+        .pdf-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; font-size: 11px; border-bottom: 1px dashed #ccc; padding-bottom: 12px; }
+        .pdf-athlete-card { border: 1px solid black; border-radius: 6px; padding: 12px; margin-bottom: 18px; page-break-inside: avoid; background: #fff; }
+        .pdf-athlete-header { display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid black; padding-bottom: 5px; margin-bottom: 10px; font-size: 13px; }
         .pdf-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11px; margin-bottom: 8px; }
-        .pdf-metric-box { background: #f5f5f5; padding: 6px; text-align: center; border-radius: 4px; border: 1px solid #e0e0e0; }
-        .pdf-metric-box strong { display: block; font-size: 14px; margin-top: 2px; }
-        .pdf-feedback-box { background: #fafafa; border-left: 3px solid black; padding: 6px 10px; font-size: 11px; font-style: italic; color: #333; margin-top: 5px; }
+        .pdf-metric-box { background: #f9f9f9; padding: 6px; text-align: center; border-radius: 4px; border: 1px solid #ddd; }
+        .pdf-metric-box strong { display: block; font-size: 14px; margin-top: 2px; color: #000; }
+        .pdf-feedback-box { background: #f5f5f5; border-left: 3px solid black; padding: 8px 10px; font-size: 11px; font-style: italic; color: #222; margin-top: 8px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -142,7 +139,6 @@
     <div class="nav-item" id="btn-logs" onclick="showTab('logs')">LOGS</div>
 </div>
 
-<!-- ABA CONVOCAÇÃO -->
 <section id="convocacao" class="section active">
     <div class="game-info-card">
         <label>Nome do Adversário / Jogo</label>
@@ -178,12 +174,10 @@
     </div>
 </section>
 
-<!-- ABA CONFIGURAÇÃO DE QUADRA -->
 <section id="sets" class="section">
     <div id="sets-container"></div>
 </section>
 
-<!-- ABA LIVE JOGO -->
 <section id="live" class="section">
     <div style="text-align:center; margin-bottom: 15px;">
         <select id="live-set-selector" onchange="changeSet(this.value)" style="width: auto; background: var(--card); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border); color: var(--primary); font-weight: 800;">
@@ -218,7 +212,6 @@
     </div>
 </section>
 
-<!-- MÓDULO SCOUT -->
 <section id="scout" class="section">
     <h3 id="scout-atleta-nome" style="text-align: center; color: var(--success);">Selecione uma atleta</h3>
     
@@ -260,7 +253,6 @@
         </div>
     </div>
 
-    <!-- Tabela Live na Interface App -->
     <div class="scout-report-section">
         <table class="scout-table" id="table-to-print">
             <thead>
@@ -278,16 +270,13 @@
     </div>
 </section>
 
-<!-- ABA LOGS -->
 <section id="logs" class="section">
     <div id="logs-container" style="max-width: 500px; margin: auto;"></div>
     <button onclick="clearLogs()" style="width:100%; max-width: 500px; display: block; margin: 20px auto; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold;">LIMPAR HISTÓRICO</button>
 </section>
 
-<!-- TEMPLATE DE RELATÓRIO A4 OCULTO (GERADOR DO PDF ANALÍTICO P&B) -->
 <div id="pdf-render-template">
     <div class="pdf-header">
-        <div class="pdf-logo">III.V MEDIA</div>
         <div class="pdf-title-block">
             <h2>Relatório Técnico de Rendimento Individual</h2>
             <p>Análise Avançada de Scout e Eficiência Tática por Atleta</p>
@@ -302,7 +291,6 @@
     <div id="pdf-athletes-container"></div>
 </div>
 
-<!-- SISTEMA INTEGRADO COM FIREBASE -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -486,7 +474,6 @@
         });
     }
 
-    // Gerador de Parecer Técnico Baseado em Regras Lógicas de Eficiência
     function getTechnicalFeedback(s) {
         let totalAtk = s.atk_ponto + s.atk_minus + s.atk_plus;
         let totalServ = s.serv_plus + s.serv_minus + s.serv_ace;
@@ -516,7 +503,6 @@
         return feedbacks.join(" ") || "Volume de jogo reduzido para amostragem estatística profunda neste set/partida.";
     }
 
-    // Nova Função Estruturada para Gerar o PDF Analítico Profissional A4 Vertical
     window.generateProfessionalReportPDF = () => {
         const container = document.getElementById('pdf-athletes-container');
         container.innerHTML = "";
@@ -530,7 +516,6 @@
         state.atletas.forEach(a => {
             const s = (state.scoutData && state.scoutData[a.n]) || { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, def_plus:0, bloco:0 };
             
-            // Filtra atletas que entraram em quadra ou tiveram ações computadas
             let totalAcoes = Object.values(s).reduce((acc, curr) => acc + curr, 0);
             if(totalAcoes === 0) return;
 
@@ -564,18 +549,22 @@
         }
 
         const reportWindow = document.getElementById('pdf-render-template');
-        reportWindow.style.display = 'block';
+        // Mantém visível para o motor do html2pdf calcular as alturas perfeitamente antes da captura
+        reportWindow.style.position = 'relative';
+        reportWindow.style.left = '0';
 
         const opt = {
             margin:       10,
             filename:     `Relatorio_Performance_${state.advName}_${state.gameDate}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
+            html2canvas:  { scale: 2, backgroundColor: '#ffffff', useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         html2pdf().set(opt).from(reportWindow).save().then(() => {
-            reportWindow.style.display = 'none';
+            // Move de volta para fora da tela após salvar
+            reportWindow.style.position = 'absolute';
+            reportWindow.style.left = '-9999px';
         });
     };
 
