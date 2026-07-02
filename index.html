@@ -227,10 +227,18 @@
         </div>
 
         <div class="scout-action-group">
-            <label>Recepção</label>
+            <label>Recepção (Serviço)</label>
             <div class="scout-btn-grid">
                 <button class="btn-plus" onclick="trackScout('rec_plus')">(+)</button>
                 <button class="btn-minus" onclick="trackScout('rec_minus')">(-)</button>
+            </div>
+        </div>
+
+        <div class="scout-action-group">
+            <label>Passe (Defesa/Free)</label>
+            <div class="scout-btn-grid">
+                <button class="btn-plus" onclick="trackScout('passe_plus')">(+)</button>
+                <button class="btn-minus" onclick="trackScout('passe_minus')">(-)</button>
             </div>
         </div>
 
@@ -251,9 +259,9 @@
             </div>
         </div>
 
-        <div class="scout-action-group" style="grid-column: span 2;">
+        <div class="scout-action-group">
             <label>Cobertura (Proteção ao Bloco)</label>
-            <div class="scout-btn-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="scout-btn-grid">
                 <button class="btn-plus" onclick="trackScout('prot_plus')">EFETIVA (+)</button>
                 <button class="btn-minus" onclick="trackScout('prot_minus')">ERRO (-)</button>
             </div>
@@ -265,7 +273,7 @@
         <table class="scout-table">
             <thead>
                 <tr>
-                    <th>Atleta</th><th>Serv(+)</th><th>Serv(-)</th><th>ACE</th><th>Rec(+)</th><th>Rec(-)</th><th>Atk Pnto</th><th>Atk Erro</th><th>Bloco(+)</th><th>Bloco(-)</th><th>Prot(+)</th><th>Prot(-)</th>
+                    <th>Atleta</th><th>Serv(+)</th><th>Serv(-)</th><th>ACE</th><th>Rec(+)</th><th>Rec(-)</th><th>Pas(+)</th><th>Pas(-)</th><th>Atk Pnto</th><th>Atk Erro</th><th>Bloco(+)</th><th>Bloco(-)</th><th>Prot(+)</th><th>Prot(-)</th>
                 </tr>
             </thead>
             <tbody id="scout-table-body"></tbody>
@@ -383,10 +391,9 @@
         if(!state.scoutData) state.scoutData = {};
         if(!state.scoutData[currentScoutSet]) state.scoutData[currentScoutSet] = {};
         if(!state.scoutData[currentScoutSet][selectedScoutAtleta.n]) {
-            state.scoutData[currentScoutSet][selectedScoutAtleta.n] = { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
+            state.scoutData[currentScoutSet][selectedScoutAtleta.n] = { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, passe_plus:0, passe_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
         }
         
-        // Inicialização de segurança caso os novos campos não existam em registos antigos
         if(state.scoutData[currentScoutSet][selectedScoutAtleta.n][campo] === undefined) {
             state.scoutData[currentScoutSet][selectedScoutAtleta.n][campo] = 0;
         }
@@ -433,12 +440,13 @@
         
         const setData = state.scoutData[currentScoutSet] || {};
         state.atletas.forEach(a => {
-            const s = setData[a.n] || { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
+            const s = setData[a.n] || { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, passe_plus:0, passe_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
             body.innerHTML += `
                 <tr>
                     <td style="font-weight:bold; text-align:left;">${a.nome}</td>
                     <td>${s.serv_plus || 0}</td><td>${s.serv_minus || 0}</td><td>${s.serv_ace || 0}</td>
                     <td>${s.rec_plus || 0}</td><td>${s.rec_minus || 0}</td>
+                    <td>${s.passe_plus || 0}</td><td>${s.passe_minus || 0}</td>
                     <td>${s.atk_ponto || 0}</td><td>${s.atk_minus || 0}</td>
                     <td>${s.bloco_plus || 0}</td><td>${s.bloco_minus || 0}</td>
                     <td>${s.prot_plus || 0}</td><td>${s.prot_minus || 0}</td>
@@ -450,6 +458,7 @@
         let totalAtk = (s.atk_ponto || 0) + (s.atk_minus || 0) + (s.atk_plus || 0);
         let totalServ = (s.serv_plus || 0) + (s.serv_minus || 0) + (s.serv_ace || 0);
         let totalProt = (s.prot_plus || 0) + (s.prot_minus || 0);
+        let totalPasse = (s.passe_plus || 0) + (s.passe_minus || 0);
         let feedbacks = [];
 
         if (totalAtk > 0) {
@@ -462,8 +471,11 @@
         }
         if ((s.bloco_plus || 0) > 2) feedbacks.push("Excelente tempo de reação e amortecimento/ponto efetivo no bloqueio.");
         if ((s.bloco_minus || 0) > (s.bloco_plus || 0)) feedbacks.push("Ajustar enquadramento de mãos no bloqueio para reduzir invasões ou explorações.");
-        if (s.rec_minus > s.rec_plus) feedbacks.push("Necessidade de ajustar posicionamento de base na receção.");
+        if (s.rec_minus > s.rec_plus) feedbacks.push("Necessidade de ajustar posicionamento de base na receção de serviço.");
         
+        if (totalPasse > 0) {
+            if (s.passe_minus > s.passe_plus) feedbacks.push("Reforçar precisão no passe de transição (bolas de defesa/mão livre).");
+        }
         if (totalProt > 0) {
             if (s.prot_plus > s.prot_minus) feedbacks.push("Excelente leitura tática de cobertura de ataque e proteção ativa.");
             else feedbacks.push("Ajustar tempo de aproximação à cobertura para recuperar bolas amortecidas.");
@@ -491,7 +503,7 @@
                 if(totalAcoes === 0) return;
 
                 if (!geralData[a.n]) {
-                    geralData[a.n] = { nome: a.nome, role: state.roles[a.n]||'NÃO DEF.', serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
+                    geralData[a.n] = { nome: a.nome, role: state.roles[a.n]||'NÃO DEF.', serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, passe_plus:0, passe_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
                 }
                 Object.keys(s).forEach(k => {
                     if(geralData[a.n][k] !== undefined) geralData[a.n][k] += s[k];
@@ -504,9 +516,10 @@
                             <div class="box">Serviço (+ / -)<strong>${s.serv_plus || 0} / ${s.serv_minus || 0}</strong></div>
                             <div class="box">Aces<strong>${s.serv_ace || 0}</strong></div>
                             <div class="box">Receção (+ / -)<strong>${s.rec_plus || 0} / ${s.rec_minus || 0}</strong></div>
+                            <div class="box">Passe (+ / -)<strong>${s.passe_plus || 0} / ${s.passe_minus || 0}</strong></div>
                             <div class="box">Ataque (Pto / Err)<strong>${s.atk_ponto || 0} / ${s.atk_minus || 0}</strong></div>
                             <div class="box">Bloqueio (Pto / Err)<strong>${s.bloco_plus || 0} / ${s.bloco_minus || 0}</strong></div>
-                            <div class="box" style="grid-column: span 3;">Proteção Bloco (Efetiva / Erro)<strong>${s.prot_plus || 0} / ${s.prot_minus || 0}</strong></div>
+                            <div class="box" style="grid-column: span 2;">Proteção Bloco (Efet / Err)<strong>${s.prot_plus || 0} / ${s.prot_minus || 0}</strong></div>
                         </div>
                     </div>`;
             });
@@ -527,11 +540,12 @@
                         <div class="box">Total Serviços<strong>${g.serv_plus} / ${g.serv_minus}</strong></div>
                         <div class="box">Total Aces<strong>${g.serv_ace}</strong></div>
                         <div class="box">Total Receções<strong>${g.rec_plus} / ${g.rec_minus}</strong></div>
-                        <div class="box">Total Ataques<strong>${g.atk_ponto} / ${g.atk_minus}</strong></div>
+                        <div class="box">Total Passes<strong>${g.passe_plus} / ${g.passe_minus}</strong></div>
                     </div>
-                    <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top: 5px;">
-                        <div class="box" style="text-align: left; padding-left: 12px;">Bloqueios (Pto / Err): <strong>${g.bloco_plus} / ${g.bloco_minus}</strong></div>
-                        <div class="box" style="text-align: left; padding-left: 12px;">Proteção Bloco (Efet / Err): <strong>${g.prot_plus} / ${g.prot_minus}</strong></div>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 5px;">
+                        <div class="box">Ataques: <strong>${g.atk_ponto} / ${g.atk_minus}</strong></div>
+                        <div class="box">Bloqueios: <strong>${g.bloco_plus} / ${g.bloco_minus}</strong></div>
+                        <div class="box">Proteção Bloco: <strong>${g.prot_plus} / ${g.prot_minus}</strong></div>
                     </div>
                     <div class="feedback"><strong>Diretriz de Evolução Corretiva:</strong> ${feedback}</div>
                 </div>`;
