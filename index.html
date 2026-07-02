@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Volei Pro - Juvenis B - Hamilton Jr</title>
+    <title>Volei Pro - GESTÃO</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Biblioteca para exportar o PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -51,13 +51,15 @@
         .pos-box option { background-color: #1e293b; color: white; }
         .msg-regra { font-size: 0.65rem; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; min-height: 20px; line-height: 1.3; }
         
-        .scoreboard { display: flex; justify-content: space-around; align-items: center; background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 1px solid var(--border); max-width: 400px; margin: 0 auto 20px; }
+        .scoreboard { display: flex; justify-content: space-around; align-items: center; background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 5px; border: 1px solid var(--border); max-width: 400px; margin: 0 auto 5px; }
         .score-num { font-size: 2.5rem; font-weight: 800; color: var(--primary); display: block; cursor: pointer; }
         .score-btn { background: var(--primary); color: var(--bg); border: none; padding: 12px; border-radius: 10px; font-weight: 800; width: 100%; margin-top: 10px; }
         .score-btn.adv { background: var(--accent); color: white; }
         
         .live-court { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: #1e3a8a; padding: 25px; border-radius: 15px; border: 2px solid white; max-width: 320px; margin: 0 auto; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-        .live-pos { background: rgba(255,255,255,0.15); aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; border: 1px solid rgba(255,255,255,0.4); position: relative; }
+        .live-pos { background: rgba(255,255,255,0.15); aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; border: 1px solid rgba(255,255,255,0.4); position: relative; cursor: pointer; transition: 0.2s; }
+        .live-pos:hover { background: rgba(255,255,255,0.3); }
+        .live-pos.libero-active { background: var(--accent); color: white; border-color: white; }
         .pos-label { font-size: 0.55rem; color: #cbd5e1; position: absolute; top: 6px; font-weight: 700; }
         .server-ball { width: 14px; height: 14px; background: #fbbf24; border-radius: 50%; position: absolute; bottom: -6px; animation: bounce 0.6s infinite alternate; box-shadow: 0 0 15px #fbbf24; z-index: 10; }
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
@@ -102,6 +104,11 @@
         .scout-controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
         .btn-print-tab { background: #22c55e; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .btn-clear-scout { background: #334155; color: #cbd5e1; border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
+
+        /* Novo Modal de Substituição */
+        #sub-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 4000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #1e293b; border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; }
+        .modal-btn { width: 100%; padding: 12px; margin: 6px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -170,10 +177,13 @@
 
 <!-- ABA LIVE JOGO -->
 <section id="live" class="section">
-    <div style="text-align:center; margin-bottom: 15px;">
+    <div style="text-align:center; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; gap: 15px;">
         <select id="live-set-selector" onchange="changeSet(this.value)" style="width: auto; background: var(--card); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border); color: var(--primary); font-weight: 800;">
             <option value="1">SET 1</option><option value="2">SET 2</option><option value="3">SET 3</option><option value="4">SET 4</option><option value="5">SET 5</option>
         </select>
+        <div style="font-size: 0.7rem; font-weight: bold; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);">
+            SUBS SET: <span id="sub-counter-view" style="color: var(--warning);">0 / 6</span>
+        </div>
     </div>
 
     <div class="scoreboard">
@@ -202,6 +212,15 @@
         <button onclick="resetLive()" style="background:none; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">REINICIAR PLACAR</button>
     </div>
 </section>
+
+<!-- NOVO MODAL DE GESTÃO DE QUADRA (SUBSTITUIÇÃO E LÍBERO) -->
+<div id="sub-modal" onclick="closeSubModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 style="margin-top: 0; text-align: center; color: var(--primary); font-size: 1rem;" id="sub-modal-title">Gestão de Posição</h3>
+        <div id="modal-options-container"></div>
+        <button class="modal-btn" style="background: #334155; color: white;" onclick="closeSubModal()">CANCELAR</button>
+    </div>
+</div>
 
 <!-- MÓDULO SCOUT -->
 <section id="scout" class="section">
@@ -329,9 +348,20 @@
         scoutData: {} 
     };
 
-    let liveState = { home: 0, away: 0, serving: 'home', currentLineup: [], currentSet: "1" };
+    // Estados locais expandidos para acomodar substituições e liberos
+    let liveState = { 
+        home: 0, 
+        away: 0, 
+        serving: 'home', 
+        currentLineup: [], // Armazena quem está fisicamente em quadra (pode ser o número do Líbero)
+        originalLineup: [], // Armazena o jogador de origem da quadra (para saber para quem o líbero sai)
+        currentSet: "1",
+        subsCount: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
+    };
+    
     let currentScoutSet = "1";
     let selectedScoutAtleta = null;
+    let selectedIndexForSub = null; // Guarda o índice da quadra virtual focado para troca
 
     onSnapshot(doc(db, "gestao", "atual"), (snap) => {
         if(snap.exists()) {
@@ -391,7 +421,7 @@
         if(!state.scoutData) state.scoutData = {};
         if(!state.scoutData[currentScoutSet]) state.scoutData[currentScoutSet] = {};
         if(!state.scoutData[currentScoutSet][selectedScoutAtleta.n]) {
-            state.scoutData[currentScoutSet][selectedScoutAtleta.n] = { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0, passe_plus:0, passe_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
+            state.scoutData[currentScoutSet][selectedScoutAtleta.n] = { serv_plus:0, serv_minus:0, serv_ace:0, rec_plus:0, rec_minus:0,  passe_plus:0, passe_minus:0, atk_ponto:0, atk_plus:0, atk_minus:0, bloco_plus:0, bloco_minus:0, prot_plus:0, prot_minus:0 };
         }
         
         if(state.scoutData[currentScoutSet][selectedScoutAtleta.n][campo] === undefined) {
@@ -477,7 +507,7 @@
             if (s.passe_minus > s.passe_plus) feedbacks.push("Reforçar precisão no passe de transição (bolas de defesa/mão livre).");
         }
         if (totalProt > 0) {
-            if (s.prot_plus > s.prot_minus) feedbacks.push("Excelente leitura tática de cobertura de ataque e proteção ativa.");
+            if (s.prot_plus > s.prot_minus) feedbacks.push("Excelente leitura tática de cobertura de ataque e proteção activa.");
             else feedbacks.push("Ajustar tempo de aproximação à cobertura para recuperar bolas amortecidas.");
         }
 
@@ -651,37 +681,176 @@
         if (atual.length < 6) return { ok: false, msg: "A aguardar definição das 6 jogadoras..." };
         return { ok: true, msg: "✓ Formação Válida." };
     }
+    
     window.initLiveSet = () => {
         const s = liveState.currentSet;
-        liveState.currentLineup = [state.sets[`s${s}p4`] || "?", state.sets[`s${s}p3`] || "?", state.sets[`s${s}p2`] || "?", state.sets[`s${s}p5`] || "?", state.sets[`s${s}p6`] || "?", state.sets[`s${s}p1`] || "?"];
+        // Carrega a escalação original definida na aba quadra
+        liveState.originalLineup = [state.sets[`s${s}p4`] || "?", state.sets[`s${s}p3`] || "?", state.sets[`s${s}p2`] || "?", state.sets[`s${s}p5`] || "?", state.sets[`s${s}p6`] || "?", state.sets[`s${s}p1`] || "?"];
+        // O lineup corrente começa igual ao original
+        liveState.currentLineup = [...liveState.originalLineup];
         renderLive();
     };
+    
     window.changeSet = (s) => {
         if (liveState.home > 0 || liveState.away > 0) { state.logs.push(`SET ${liveState.currentSet}: FCA ${liveState.home} - ${liveState.away} (${state.advName})`); }
         liveState.currentSet = s; liveState.home = 0; liveState.away = 0; sync(); initLiveSet();
     };
+    
     window.addPoint = (team) => {
         if(team === 'home') { if(liveState.serving === 'away') rotate(); liveState.home++; liveState.serving = 'home'; }
         else { liveState.away++; liveState.serving = 'away'; }
         renderLive();
     };
+    
     window.removePoint = (team) => {
         if(team === 'home' && liveState.home > 0) liveState.home--;
         if(team === 'away' && liveState.away > 0) liveState.away--;
         renderLive();
     };
+    
     function rotate() {
-        const old = [...liveState.currentLineup];
-        liveState.currentLineup[5] = old[2]; liveState.currentLineup[4] = old[5]; liveState.currentLineup[3] = old[4];
-        liveState.currentLineup[0] = old[3]; liveState.currentLineup[1] = old[0]; liveState.currentLineup[2] = old[1];
+        const oldCur = [...liveState.currentLineup];
+        const oldOrig = [...liveState.originalLineup];
+        
+        // Rotação física em quadra
+        liveState.currentLineup[5] = oldCur[2]; liveState.currentLineup[4] = oldCur[5]; liveState.currentLineup[3] = oldCur[4];
+        liveState.currentLineup[0] = oldCur[3]; liveState.currentLineup[1] = oldCur[0]; liveState.currentLineup[2] = oldCur[1];
+        
+        // Rotação dos donos originais da posição
+        liveState.originalLineup[5] = oldOrig[2]; liveState.originalLineup[4] = oldOrig[5]; liveState.originalLineup[3] = oldOrig[4];
+        liveState.originalLineup[0] = oldOrig[3]; liveState.originalLineup[1] = oldOrig[0]; liveState.originalLineup[2] = oldOrig[1];
+        
+        checkLiberoRotationRule();
     }
+    
     window.undoRotate = () => {
-        const old = [...liveState.currentLineup];
-        liveState.currentLineup[2] = old[5]; liveState.currentLineup[5] = old[4]; liveState.currentLineup[4] = old[3];
-        liveState.currentLineup[3] = old[0]; liveState.currentLineup[0] = old[1]; liveState.currentLineup[1] = old[2];
+        const oldCur = [...liveState.currentLineup];
+        const oldOrig = [...liveState.originalLineup];
+        
+        liveState.currentLineup[2] = oldCur[5]; liveState.currentLineup[5] = oldCur[4]; liveState.currentLineup[4] = oldCur[3];
+        liveState.currentLineup[3] = oldCur[0]; liveState.currentLineup[0] = oldCur[1]; liveState.currentLineup[1] = oldCur[2];
+        
+        liveState.originalLineup[2] = oldOrig[5]; liveState.originalLineup[5] = oldOrig[4]; liveState.originalLineup[4] = oldOrig[3];
+        liveState.originalLineup[3] = oldOrig[0]; liveState.originalLineup[0] = oldOrig[1]; liveState.originalLineup[1] = oldOrig[2];
+        
         renderLive();
     };
-    window.resetLive = () => { if(confirm("Reiniciar placar deste set?")) { liveState.home = 0; liveState.away = 0; liveState.serving = 'home'; initLiveSet(); } };
+
+    // Validação automática se o Líbero rodar para a rede (P4, P3 ou P2)
+    function checkLiberoRotationRule() {
+        const labels = [4, 3, 2, 5, 6, 1];
+        liveState.currentLineup.forEach((num, i) => {
+            if(state.roles[num] === 'LIB') {
+                const posAparicao = labels[i];
+                if(posAparicao === 4 || posAparicao === 3 || posAparicao === 2) {
+                    alert(`⚠️ ATENÇÃO: A Líbero (Nº ${num}) rodou para a P${posAparicao} (Rede)! Ela deve ser substituída de volta.`);
+                }
+            }
+        });
+    }
+
+    // Janela Modal Dinâmica de Substituições
+    window.openSubModal = (index) => {
+        selectedIndexForSub = index;
+        const labels = [4, 3, 2, 5, 6, 1];
+        const posAtual = labels[index];
+        const atletaAtualNum = liveState.currentLineup[index];
+        const donoOriginalNum = liveState.originalLineup[index];
+        
+        const modal = document.getElementById('sub-modal');
+        const title = document.getElementById('sub-modal-title');
+        const container = document.getElementById('modal-options-container');
+        
+        title.innerText = `Posição P${posAtual} (Atleta Atual: Nº ${atletaAtualNum})`;
+        container.innerHTML = "";
+        
+        // 1. Encontrar Líberos Convocadas
+        const liberosConvocadas = state.atletas.filter(a => state.conv.includes(a.n) && state.roles[a.n] === 'LIB');
+        const isLinhaDeTras = (posAtual === 5 || posAtual === 6 || posAtual === 1);
+        const isLiberoAtivaNestaPos = state.roles[atletaAtualNum] === 'LIB';
+
+        if (isLinhaDeTras && !isLiberoAtivaNestaPos) {
+            liberosConvocadas.forEach(lib => {
+                container.innerHTML += `<button class="modal-btn" style="background: var(--accent); color: white;" onclick="executeLiberoIn(${lib.n})">ENTRADA LÍBERO (Nº ${lib.n})</button>`;
+            });
+        } else if (isLiberoAtivaNestaPos) {
+            container.innerHTML += `<button class="modal-btn" style="background: var(--success); color: white;" onclick="executeLiberoOut(${donoOriginalNum})">SAÍDA LÍBERO (Volta Nº ${donoOriginalNum})</button>`;
+        }
+
+        // 2. Opções de Substituição Regular (Apenas se não for o líbero ativo a jogar)
+        if (!isLiberoAtivaNestaPos) {
+            container.innerHTML += `<div style="font-size:0.7rem; font-weight:bold; color:#64748b; margin: 10px 0 5px 0; text-align:center;">SUBSTITUIÇÃO REGULAR</div>`;
+            
+            // Atletas que estão fora da quadra (banco)
+            const noBanco = state.atletas.filter(a => state.conv.includes(a.n) && !liveState.currentLineup.includes(String(a.n)) && !liveState.currentLineup.includes(a.n) && state.roles[a.n] !== 'LIB');
+            
+            if(noBanco.length === 0) {
+                container.innerHTML += `<p style="font-size:0.65rem; color:#64748b; text-align:center;">Nenhuma atleta disponível no banco.</p>`;
+            } else {
+                noBanco.forEach(bancoAth => {
+                    container.innerHTML += `<button class="modal-btn" style="background: #334155; color: white; border: 1px solid var(--primary);" onclick="executeRegularSub(${bancoAth.n})">Entra Nº ${bancoAth.n} (${bancoAth.nome.split(' ')[0]})</button>`;
+                });
+            }
+        }
+        
+        modal.style.display = "flex";
+    };
+
+    window.closeSubModal = () => {
+        document.getElementById('sub-modal').style.display = "none";
+    };
+
+    window.executeLiberoIn = (libNum) => {
+        const antigoNum = liveState.currentLineup[selectedIndexForSub];
+        liveState.currentLineup[selectedIndexForSub] = String(libNum);
+        
+        state.logs.push(`SET ${liveState.currentSet}: Entrada Líbero Nº ${libNum} para o lugar da Nº ${antigoNum} na P${[4,3,2,5,6,1][selectedIndexForSub]}`);
+        sync();
+        closeSubModal();
+        renderLive();
+    };
+
+    window.executeLiberoOut = (originalNum) => {
+        const libNum = liveState.currentLineup[selectedIndexForSub];
+        liveState.currentLineup[selectedIndexForSub] = String(originalNum);
+        
+        state.logs.push(`SET ${liveState.currentSet}: Saída Líbero Nº ${libNum} -> Retorna Nº ${originalNum}`);
+        sync();
+        closeSubModal();
+        renderLive();
+    };
+
+    window.executeRegularSub = (entraNum) => {
+        const atualSet = liveState.currentSet;
+        if (liveState.subsCount[atualSet] >= 6) {
+            alert("Limite máximo de 6 substituições neste set já foi atingido!");
+            return;
+        }
+        
+        const saiNum = liveState.currentLineup[selectedIndexForSub];
+        
+        // Atualiza tanto a quadra física quanto o registro de dono original da posição
+        liveState.currentLineup[selectedIndexForSub] = String(entraNum);
+        liveState.originalLineup[selectedIndexForSub] = String(entraNum);
+        
+        liveState.subsCount[atualSet]++;
+        
+        state.logs.push(`SET ${atualSet} - Sub ${liveState.subsCount[atualSet]}/6: Saiu Nº ${saiNum}, Entrou Nº ${entraNum}`);
+        sync();
+        closeSubModal();
+        renderLive();
+    };
+    
+    window.resetLive = () => { 
+        if(confirm("Reiniciar placar e substituições deste set?")) { 
+            liveState.home = 0; 
+            liveState.away = 0; 
+            liveState.serving = 'home'; 
+            liveState.subsCount[liveState.currentSet] = 0;
+            initLiveSet(); 
+        } 
+    };
+    
     function updateTacticHint() {
         const labels = [4, 3, 2, 5, 6, 1]; let setterPos = null;
         liveState.currentLineup.forEach((num, i) => { if (state.roles[num] === 'PAS') setterPos = labels[i]; });
@@ -697,14 +866,28 @@
         if (setterPos && descriptions[setterPos]) { posTitle.innerText = descriptions[setterPos][0]; posDesc.innerText = descriptions[setterPos][1]; }
         else { posTitle.innerText = "SISTEMA EM QUADRA"; posDesc.innerText = "Defina as atletas como PAS (Passadora) na lista para visualizar as dinâmicas de transição por rotação."; }
     }
+    
     function renderLive() {
-        document.getElementById('score-home').innerText = liveState.home; document.getElementById('score-away').innerText = liveState.away;
-        const court = document.getElementById('live-court-render'); const labels = [4, 3, 2, 5, 6, 1];
-        court.innerHTML = liveState.currentLineup.map((num, i) => `
-            <div class="live-pos"><span class="pos-label">P${labels[i]}</span>${num}${(liveState.serving === 'home' && labels[i] === 1) ? '<div class="server-ball"></div>' : ''}</div>
-         `).join('');
+        document.getElementById('score-home').innerText = liveState.home; 
+        document.getElementById('score-away').innerText = liveState.away;
+        document.getElementById('sub-counter-view').innerText = `${liveState.subsCount[liveState.currentSet]} / 6`;
+        
+        const court = document.getElementById('live-court-render'); 
+        const labels = [4, 3, 2, 5, 6, 1];
+        
+        court.innerHTML = liveState.currentLineup.map((num, i) => {
+            const isLibero = state.roles[num] === 'LIB';
+            return `
+                <div class="live-pos ${isLibero ? 'libero-active' : ''}" onclick="openSubModal(${i})">
+                    <span class="pos-label">P${labels[i]}</span>
+                    ${num}
+                    ${(liveState.serving === 'home' && labels[i] === 1) ? '<div class="server-ball"></div>' : ''}
+                </div>
+            `;
+        }).join('');
         updateTacticHint();
     }
+    
     function render() {
         document.getElementById('athlete-list').innerHTML = state.atletas.sort((a,b)=>a.n-b.n).map(a => `
             <div class="athlete-card">
