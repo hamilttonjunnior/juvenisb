@@ -384,6 +384,7 @@
         currentLineup: [], // Armazena quem está fisicamente em quadra
         originalLineup: [], // Armazena a jogadora de origem do alinhamento inicial do set
         substitutesLineup: [], // Registo de substituto regular ativo [null ou { titularNum, substitutoNum }]
+        closedPositions: { "1": [], "2": [], "3": [], "4": [], "5": [] }, // Posições onde o titular já regressou e fechou trocas
         usedSubstitutes: { "1": [], "2": [], "3": [], "4": [], "5": [] }, // Atletas reservas que já jogaram no set
         currentSet: "1",
         subsCount: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
@@ -720,6 +721,7 @@
         liveState.currentLineup = [...liveState.originalLineup];
         liveState.substitutesLineup = [null, null, null, null, null, null];
         if (!liveState.usedSubstitutes[s]) liveState.usedSubstitutes[s] = [];
+        if (!liveState.closedPositions[s]) liveState.closedPositions[s] = [];
         liveState.serving = liveState.initialServer;
         const serverSelect = document.getElementById('initial-server-selector');
         if(serverSelect) serverSelect.value = liveState.initialServer;
@@ -818,6 +820,7 @@
         const donoOriginalNum = liveState.originalLineup[index];
         const subInfo = liveState.substitutesLineup[index];
         const atualSet = liveState.currentSet;
+        const fechadasNoSet = liveState.closedPositions[atualSet] || [];
         
         const modal = document.getElementById('sub-modal');
         const title = document.getElementById('sub-modal-title');
@@ -844,8 +847,12 @@
         if (!isLiberoAtivaNestaPos) {
             container.innerHTML += `<div style="font-size:0.7rem; font-weight:bold; color:var(--gray-light); margin: 10px 0 5px 0; text-align:center;">SUBSTITUIÇÃO REGULAR</div>`;
             
+            // VERIFICAÇÃO SE A TROCA PARA ESTA POSIÇÃO/TITULAR JÁ FOI FECHADA NESTE SET
+            if (fechadasNoSet.includes(String(donoOriginalNum))) {
+                container.innerHTML += `<p style="font-size:0.7rem; color:var(--accent); text-align:center; font-weight:bold; padding: 10px; background: rgba(244, 63, 94, 0.1); border-radius: 8px; border: 1px solid var(--accent);">🔒 TROCAS ESGOTADAS NESTA POSIÇÃO PARA ESTE SET.<br><span style="font-size:0.6rem; color:var(--gray-light); font-weight:normal;">Regra FIVB: O titular já regressou. Esta vaga não permite novas substituições.</span></p>`;
+            }
             // CASO A: A atleta atualmente na quadra é uma SUBSTITUTA (reserva que entrou)
-            if (subInfo && String(subInfo.substitutoNum) === String(atletaAtualNum)) {
+            else if (subInfo && String(subInfo.substitutoNum) === String(atletaAtualNum)) {
                 const titularOrig = subInfo.titularNum;
                 const titularObj = state.atletas.find(a => String(a.n) === String(titularOrig));
                 const titularNome = titularObj ? titularObj.nome.split(' ')[0] : titularOrig;
@@ -857,7 +864,7 @@
                     </button>
                 `;
             } 
-            // CASO B: A atleta atualmente na quadra é a TITULAR original
+            // CASO B: A atleta atualmente na quadra é a TITULAR original e AINDA NÃO USOU A TROCA
             else {
                 // Seleciona reservas elegíveis do banco que ainda não foram "queimados" neste set
                 const usadasNoSet = liveState.usedSubstitutes[atualSet] || [];
@@ -923,11 +930,15 @@
             liveState.currentLineup[selectedIndexForSub] = String(entraNum);
             liveState.originalLineup[selectedIndexForSub] = String(entraNum);
             
-            // Marca a reserva como utilizada para não poder voltar a entrar neste set
+            // Regista a reserva como "utilizada" (não pode voltar a entrar neste set)
             if (!liveState.usedSubstitutes[atualSet]) liveState.usedSubstitutes[atualSet] = [];
             liveState.usedSubstitutes[atualSet].push(String(saiNum));
             
-            // Limpa a associação do par (substituição desta posição fechada)
+            // BLOQUEIO PERMANENTE: Regista o titular como com troca FECHADA neste set
+            if (!liveState.closedPositions[atualSet]) liveState.closedPositions[atualSet] = [];
+            liveState.closedPositions[atualSet].push(String(entraNum));
+
+            // Limpa a associação ativa do par
             liveState.substitutesLineup[selectedIndexForSub] = null;
         } 
         // 2. Se quem está a sair é a TITULAR original, uma RESERVA está a entrar
@@ -955,6 +966,7 @@
             liveState.serving = liveState.initialServer; 
             liveState.subsCount[liveState.currentSet] = 0;
             liveState.usedSubstitutes[liveState.currentSet] = [];
+            liveState.closedPositions[liveState.currentSet] = [];
             initLiveSet(); 
         } 
     };
