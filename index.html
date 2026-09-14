@@ -22,6 +22,7 @@
             --success: #22c55e; 
             --warning: #f1c40f; 
             --sub-fixed: #f59e0b; /* Laranja para indicar troca fixa/obrigatória */
+            --sub-exceptional: #c084fc; /* Roxo/Rosa para Substituição Excepcional */
             --white: #ffffff; 
             --gray-light: #a1a1aa;
             --border: #3f3f46; 
@@ -69,13 +70,16 @@
         .score-btn { background: #3f3f46; color: var(--white); border: 1px solid #52525b; padding: 12px; border-radius: 10px; font-weight: 800; width: 100%; margin-top: 10px; }
         .score-btn.adv { background: var(--accent); color: white; border: none; }
         
-        /* MANTIDO COR DA QUADRA LIVE E LÍBERO */
+        /* QUADRA LIVE E ESTILOS VISUAIS DE SUBSTITUIÇÃO */
         .live-court { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: #1e3a8a; padding: 25px; border-radius: 15px; border: 2px solid white; max-width: 320px; margin: 0 auto; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
         .live-pos { background: rgba(255,255,255,0.15); aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; border: 1px solid rgba(255,255,255,0.4); position: relative; cursor: pointer; transition: 0.2s; }
         .live-pos:hover { background: rgba(255,255,255,0.3); }
         .live-pos.libero-active { background: var(--accent); color: white; border-color: white; }
-        /* DESTAQUE VISUAL DA COR DO JOGADOR SUBSTITUTO */
+        /* DESTAQUE SUBSTITUTO REGULAR (Laranja) */
         .live-pos.substitute-active { background: #f59e0b; color: #121214; border-color: #fef08a; font-weight: 900; }
+        /* DESTAQUE SUBSTITUIÇÃO EXCEPCIONAL (Roxo/Rosa) */
+        .live-pos.exceptional-active { background: #a855f7; color: white; border-color: #f472b6; font-weight: 900; box-shadow: 0 0 12px rgba(168, 85, 247, 0.8); }
+        
         .pos-label { font-size: 0.55rem; color: #cbd5e1; position: absolute; top: 6px; font-weight: 700; }
         .server-ball { width: 14px; height: 14px; background: #fbbf24; border-radius: 50%; position: absolute; bottom: -6px; animation: bounce 0.6s infinite alternate; box-shadow: 0 0 15px #fbbf24; z-index: 10; }
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
@@ -90,13 +94,9 @@
         
         .log-item { background: var(--card); padding: 12px; border-radius: 12px; margin-bottom: 8px; border-left: 4px solid var(--gray-light); font-size: 0.85rem; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 
-        /* Estilos do Módulo Scout Integrado */
+        /* Módulos Scout */
         .scout-atleta-selector { display: flex; overflow-x: auto; gap: 10px; padding: 15px 0; scrollbar-width: none; }
-        .scout-atleta-card { 
-            min-width: 80px; height: 70px; background: var(--card); border-radius: 12px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border: 1px solid var(--border); cursor: pointer; transition: 0.2s;
-        }
+        .scout-atleta-card { min-width: 80px; height: 70px; background: var(--card); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
         .scout-atleta-card.active { border-color: var(--success); background: var(--card-inner); transform: scale(1.05); }
         .scout-atleta-card span { font-size: 11px; margin-top: 3px; text-align: center; color: var(--gray-light); }
         
@@ -111,7 +111,6 @@
         .btn-ace { background: #2563eb; color: white; }
         .btn-neutral { background: #52525b; color: white; }
 
-        /* Relatório Scout na Interface */
         .scout-report-section { margin-top: 25px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 15px; overflow-x: auto; }
         .scout-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; text-align: center; color: var(--white); }
         .scout-table th, .scout-table td { border: 1px solid var(--border); padding: 8px; }
@@ -121,16 +120,21 @@
         .btn-print-tab { background: var(--success); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .btn-clear-scout { background: #27272a; color: var(--gray-light); border: 1px solid var(--border); padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
 
-        /* Novo Modal de Substituição com indicador para troca por quem saiu */
+        /* Modal de Substituição e Excepcional */
         #sub-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 4000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; }
+        .modal-content { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; max-height: 85vh; overflow-y: auto; }
         .modal-btn { width: 100%; padding: 12px; margin: 6px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85rem; }
         
-        /* Estilo visual diferenciado para substituição direta de regresso */
         .sub-return-hint {
             background: rgba(245, 158, 11, 0.15) !important;
             border: 1px solid var(--sub-fixed) !important;
             color: #fef3c7 !important;
+        }
+        .btn-exceptional-trigger {
+            background: rgba(168, 85, 247, 0.2) !important;
+            border: 1px solid #a855f7 !important;
+            color: #f0abfc !important;
+            margin-top: 10px !important;
         }
     </style>
 </head>
@@ -240,7 +244,7 @@
     </div>
 </section>
 
-<!-- NOVO MODAL DE GESTÃO DE QUADRA (SUBSTITUIÇÃO E LÍBERO) -->
+<!-- MODAL DE GESTÃO DE QUADRA (SUBSTITUIÇÃO, LÍBERO E EXCEPCIONAL) -->
 <div id="sub-modal" onclick="closeSubModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 style="margin-top: 0; text-align: center; color: var(--white); font-size: 1rem;" id="sub-modal-title">Gestão de Posição</h3>
@@ -381,18 +385,19 @@
         away: 0, 
         serving: 'home', 
         initialServer: 'home',
-        currentLineup: [], // Armazena quem está fisicamente em quadra
-        originalLineup: [], // Armazena a jogadora de origem do alinhamento inicial do set
-        substitutesLineup: [], // Registo de substituto regular ativo [null ou { titularNum, substitutoNum }]
-        closedPositions: { "1": [], "2": [], "3": [], "4": [], "5": [] }, // Posições onde o titular já regressou e fechou trocas
-        usedSubstitutes: { "1": [], "2": [], "3": [], "4": [], "5": [] }, // Atletas reservas que já jogaram no set
+        currentLineup: [], 
+        originalLineup: [], 
+        substitutesLineup: [], 
+        exceptionalLineup: [false, false, false, false, false, false], // Rastreia posições com substituição excepcional (Roxo)
+        closedPositions: { "1": [], "2": [], "3": [], "4": [], "5": [] }, 
+        usedSubstitutes: { "1": [], "2": [], "3": [], "4": [], "5": [] }, 
         currentSet: "1",
         subsCount: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
     };
     
     let currentScoutSet = "1";
     let selectedScoutAtleta = null;
-    let selectedIndexForSub = null; // Guarda o índice da quadra virtual focado para troca
+    let selectedIndexForSub = null; 
 
     onSnapshot(doc(db, "gestao", "atual"), (snap) => {
         if(snap.exists()) {
@@ -715,11 +720,10 @@
     
     window.initLiveSet = () => {
         const s = liveState.currentSet;
-        // Carrega a escalação original definida na aba quadra
         liveState.originalLineup = [state.sets[`s${s}p4`] || "?", state.sets[`s${s}p3`] || "?", state.sets[`s${s}p2`] || "?", state.sets[`s${s}p5`] || "?", state.sets[`s${s}p6`] || "?", state.sets[`s${s}p1`] || "?"];
-        // O lineup corrente começa igual ao original
         liveState.currentLineup = [...liveState.originalLineup];
         liveState.substitutesLineup = [null, null, null, null, null, null];
+        liveState.exceptionalLineup = [false, false, false, false, false, false];
         if (!liveState.usedSubstitutes[s]) liveState.usedSubstitutes[s] = [];
         if (!liveState.closedPositions[s]) liveState.closedPositions[s] = [];
         liveState.serving = liveState.initialServer;
@@ -765,18 +769,19 @@
         const oldCur = [...liveState.currentLineup];
         const oldOrig = [...liveState.originalLineup];
         const oldSub = [...liveState.substitutesLineup];
+        const oldExp = [...liveState.exceptionalLineup];
         
-        // Rotação física em quadra
         liveState.currentLineup[5] = oldCur[2]; liveState.currentLineup[4] = oldCur[5]; liveState.currentLineup[3] = oldCur[4];
         liveState.currentLineup[0] = oldCur[3]; liveState.currentLineup[1] = oldCur[0]; liveState.currentLineup[2] = oldCur[1];
         
-        // Rotação dos donos originais da posição
         liveState.originalLineup[5] = oldOrig[2]; liveState.originalLineup[4] = oldOrig[5]; liveState.originalLineup[3] = oldOrig[4];
         liveState.originalLineup[0] = oldOrig[3]; liveState.originalLineup[1] = oldOrig[0]; liveState.originalLineup[2] = oldOrig[1];
         
-        // Rotação do mapeamento de substitutos
         liveState.substitutesLineup[5] = oldSub[2]; liveState.substitutesLineup[4] = oldSub[5]; liveState.substitutesLineup[3] = oldSub[4];
         liveState.substitutesLineup[0] = oldSub[3]; liveState.substitutesLineup[1] = oldSub[0]; liveState.substitutesLineup[2] = oldSub[1];
+
+        liveState.exceptionalLineup[5] = oldExp[2]; liveState.exceptionalLineup[4] = oldExp[5]; liveState.exceptionalLineup[3] = oldExp[4];
+        liveState.exceptionalLineup[0] = oldExp[3]; liveState.exceptionalLineup[1] = oldExp[0]; liveState.exceptionalLineup[2] = oldExp[1];
 
         checkLiberoRotationRule();
     }
@@ -785,6 +790,7 @@
         const oldCur = [...liveState.currentLineup];
         const oldOrig = [...liveState.originalLineup];
         const oldSub = [...liveState.substitutesLineup];
+        const oldExp = [...liveState.exceptionalLineup];
         
         liveState.currentLineup[2] = oldCur[5]; liveState.currentLineup[5] = oldCur[4]; liveState.currentLineup[4] = oldCur[3];
         liveState.currentLineup[3] = oldCur[0]; liveState.currentLineup[0] = oldCur[1]; liveState.currentLineup[1] = oldCur[2];
@@ -794,11 +800,13 @@
 
         liveState.substitutesLineup[2] = oldSub[5]; liveState.substitutesLineup[5] = oldSub[4]; liveState.substitutesLineup[4] = oldSub[3];
         liveState.substitutesLineup[3] = oldSub[0]; liveState.substitutesLineup[0] = oldSub[1]; liveState.substitutesLineup[1] = oldSub[2];
+
+        liveState.exceptionalLineup[2] = oldExp[5]; liveState.exceptionalLineup[5] = oldExp[4]; liveState.exceptionalLineup[4] = oldExp[3];
+        liveState.exceptionalLineup[3] = oldExp[0]; liveState.exceptionalLineup[0] = oldExp[1]; liveState.exceptionalLineup[1] = oldExp[2];
         
         renderLive();
     };
 
-    // Validação automática se o Líbero rodar para a rede (P4, P3 ou P2)
     function checkLiberoRotationRule() {
         const labels = [4, 3, 2, 5, 6, 1];
         liveState.currentLineup.forEach((num, i) => {
@@ -811,8 +819,8 @@
         });
     }
 
-    // Janela Modal Dinâmica de Substituições
-    window.openSubModal = (index) => {
+    // Modal de Gestão de Quadra e Trocas
+    window.openSubModal = (index, forceExceptionalView = false) => {
         selectedIndexForSub = index;
         const labels = [4, 3, 2, 5, 6, 1];
         const posAtual = labels[index];
@@ -821,6 +829,7 @@
         const subInfo = liveState.substitutesLineup[index];
         const atualSet = liveState.currentSet;
         const fechadasNoSet = liveState.closedPositions[atualSet] || [];
+        const maxSubsAtingido = liveState.subsCount[atualSet] >= 6;
         
         const modal = document.getElementById('sub-modal');
         const title = document.getElementById('sub-modal-title');
@@ -829,29 +838,59 @@
         title.innerText = `Posição P${posAtual} (Atleta Atual: Nº ${atletaAtualNum})`;
         container.innerHTML = "";
         
-        // 1. Encontrar Líberos Convocadas
         const liberosConvocadas = state.atletas.filter(a => state.conv.includes(a.n) && state.roles[a.n] === 'LIB');
         const isLinhaDeTras = (posAtual === 5 || posAtual === 6 || posAtual === 1);
         const isLiberoAtivaNestaPos = state.roles[atletaAtualNum] === 'LIB';
 
+        // MODO ESPECIAL: VISUALIZAÇÃO DE SELEÇÃO EXCEPCIONAL (LESAO / EXPULSÃO)
+        if (forceExceptionalView) {
+            container.innerHTML += `<p style="font-size:0.75rem; color:#f0abfc; text-align:center; font-weight:bold; margin-bottom:10px;">🚨 SELECIONE A ATLETA PARA SUBSTITUIÇÃO EXCEPCIONAL</p>`;
+            
+            const emQuadra = liveState.currentLineup.map(n => String(n));
+            const noBanco = state.atletas.filter(a => 
+                state.conv.includes(a.n) && 
+                !emQuadra.includes(String(a.n)) && 
+                state.roles[a.n] !== 'LIB'
+            );
+
+            if(noBanco.length === 0) {
+                container.innerHTML += `<p style="font-size:0.65rem; color:var(--gray-light); text-align:center;">Nenhuma atleta elegível disponível no banco para substituição excepcional.</p>`;
+            } else {
+                noBanco.forEach(bancoAth => {
+                    container.innerHTML += `<button class="modal-btn" style="background: #a855f7; color: white; border: none;" onclick="executeExceptionalSub(${bancoAth.n})">Entra Nº ${bancoAth.n} (${bancoAth.nome.split(' ')[0]}) [Excepcional]</button>`;
+                });
+            }
+            container.innerHTML += `<button class="modal-btn" style="background: #3f3f46; color: white;" onclick="openSubModal(${index})">⬅ Voltar</button>`;
+            return;
+        }
+
+        // 1. Líbero
         if (isLinhaDeTras && !isLiberoAtivaNestaPos) {
             liberosConvocadas.forEach(lib => {
                 container.innerHTML += `<button class="modal-btn" style="background: var(--accent); color: white;" onclick="executeLiberoIn(${lib.n})">ENTRADA LÍBERO (Nº ${lib.n})</button>`;
             });
         } else if (isLiberoAtivaNestaPos) {
-            // Destaque visual: Apenas a jogadora original de quem a líbero saiu pode retornar
             container.innerHTML += `<button class="modal-btn sub-return-hint" onclick="executeLiberoOut(${donoOriginalNum})">SAÍDA LÍBERO ↩ (Retorna obrigatoriamente a Nº ${donoOriginalNum})</button>`;
         }
 
-        // 2. Opções de Substituição Regular conforme regras FIVB
+        // 2. Substituição Regular ou Botão de Excepcional
         if (!isLiberoAtivaNestaPos) {
             container.innerHTML += `<div style="font-size:0.7rem; font-weight:bold; color:var(--gray-light); margin: 10px 0 5px 0; text-align:center;">SUBSTITUIÇÃO REGULAR</div>`;
             
-            // VERIFICAÇÃO SE A TROCA PARA ESTA POSIÇÃO/TITULAR JÁ FOI FECHADA NESTE SET
-            if (fechadasNoSet.includes(String(donoOriginalNum))) {
-                container.innerHTML += `<p style="font-size:0.7rem; color:var(--accent); text-align:center; font-weight:bold; padding: 10px; background: rgba(244, 63, 94, 0.1); border-radius: 8px; border: 1px solid var(--accent);">🔒 TROCAS ESGOTADAS NESTA POSIÇÃO PARA ESTE SET.<br><span style="font-size:0.6rem; color:var(--gray-light); font-weight:normal;">Regra FIVB: O titular já regressou. Esta vaga não permite novas substituições.</span></p>`;
+            const posicaoBloqueada = fechadasNoSet.includes(String(donoOriginalNum));
+
+            if (posicaoBloqueada || maxSubsAtingido) {
+                let razaoText = posicaoBloqueada 
+                    ? "Regra FIVB: O titular já regressou. Esta vaga não permite novas trocas regulares."
+                    : "Regra FIVB: Limite de 6 substituições do set já foi atingido.";
+
+                container.innerHTML += `
+                    <p style="font-size:0.7rem; color:var(--accent); text-align:center; font-weight:bold; padding: 10px; background: rgba(244, 63, 94, 0.1); border-radius: 8px; border: 1px solid var(--accent); margin-bottom:5px;">
+                        🔒 TROCAS REGULARES ESGOTADAS<br>
+                        <span style="font-size:0.6rem; color:var(--gray-light); font-weight:normal;">${razaoText}</span>
+                    </p>
+                `;
             }
-            // CASO A: A atleta atualmente na quadra é uma SUBSTITUTA (reserva que entrou)
             else if (subInfo && String(subInfo.substitutoNum) === String(atletaAtualNum)) {
                 const titularOrig = subInfo.titularNum;
                 const titularObj = state.atletas.find(a => String(a.n) === String(titularOrig));
@@ -864,9 +903,7 @@
                     </button>
                 `;
             } 
-            // CASO B: A atleta atualmente na quadra é a TITULAR original e AINDA NÃO USOU A TROCA
             else {
-                // Seleciona reservas elegíveis do banco que ainda não foram "queimados" neste set
                 const usadasNoSet = liveState.usedSubstitutes[atualSet] || [];
                 const noBanco = state.atletas.filter(a => 
                     state.conv.includes(a.n) && 
@@ -885,6 +922,13 @@
                     });
                 }
             }
+
+            // BOTÃO DE SUBSTITUIÇÃO EXCEPCIONAL POR LESÃO OU EXPULSÃO
+            container.innerHTML += `
+                <button class="modal-btn btn-exceptional-trigger" onclick="openSubModal(${index}, true)">
+                    🚨 SUBSTITUIÇÃO EXCEPCIONAL (Lesão / Expulsão)
+                </button>
+            `;
         }
         
         modal.style.display = "flex";
@@ -924,27 +968,20 @@
         const saiNum = liveState.currentLineup[selectedIndexForSub];
         const subInfo = liveState.substitutesLineup[selectedIndexForSub];
 
-        // 1. Se quem está a sair é uma SUBSTITUTA (Reserva a sair), a TITULAR está a regressar
         if (subInfo && String(subInfo.substitutoNum) === String(saiNum)) {
-            // A titular original regressa à quadra
             liveState.currentLineup[selectedIndexForSub] = String(entraNum);
             liveState.originalLineup[selectedIndexForSub] = String(entraNum);
             
-            // Regista a reserva como "utilizada" (não pode voltar a entrar neste set)
             if (!liveState.usedSubstitutes[atualSet]) liveState.usedSubstitutes[atualSet] = [];
             liveState.usedSubstitutes[atualSet].push(String(saiNum));
             
-            // BLOQUEIO PERMANENTE: Regista o titular como com troca FECHADA neste set
             if (!liveState.closedPositions[atualSet]) liveState.closedPositions[atualSet] = [];
             liveState.closedPositions[atualSet].push(String(entraNum));
 
-            // Limpa a associação ativa do par
             liveState.substitutesLineup[selectedIndexForSub] = null;
         } 
-        // 2. Se quem está a sair é a TITULAR original, uma RESERVA está a entrar
         else {
             liveState.currentLineup[selectedIndexForSub] = String(entraNum);
-            // Regista o vínculo do par: Titular -> Substituto
             liveState.substitutesLineup[selectedIndexForSub] = {
                 titularNum: String(saiNum),
                 substitutoNum: String(entraNum)
@@ -954,6 +991,20 @@
         liveState.subsCount[atualSet]++;
         
         state.logs.push(`SET ${atualSet} - Sub ${liveState.subsCount[atualSet]}/6: Saiu Nº ${saiNum}, Entrou Nº ${entraNum}`);
+        sync();
+        closeSubModal();
+        renderLive();
+    };
+
+    // Execução da Substituição Excepcional (Lesão / Expulsão)
+    window.executeExceptionalSub = (entraNum) => {
+        const saiNum = liveState.currentLineup[selectedIndexForSub];
+        const atualSet = liveState.currentSet;
+
+        liveState.currentLineup[selectedIndexForSub] = String(entraNum);
+        liveState.exceptionalLineup[selectedIndexForSub] = true; // Ativa cor roxa/rosa
+
+        state.logs.push(`⚠️ LESÃO/EXPULSÃO - SUB EXCEPCIONAL SET ${atualSet}: Saiu Nº ${saiNum} (Lesão/Expulsão), Entrou Nº ${entraNum}`);
         sync();
         closeSubModal();
         renderLive();
@@ -999,10 +1050,12 @@
             const isLibero = state.roles[num] === 'LIB';
             const subInfo = liveState.substitutesLineup[i];
             const isSubstitutedActive = subInfo && String(subInfo.substitutoNum) === String(num);
+            const isExceptional = liveState.exceptionalLineup[i];
             
             let extraClass = "";
-            if (isLibero) extraClass = "libero-active";
-            else if (isSubstitutedActive) extraClass = "substitute-active";
+            if (isExceptional) extraClass = "exceptional-active"; // Roxo / Rosa
+            else if (isLibero) extraClass = "libero-active";
+            else if (isSubstitutedActive) extraClass = "substitute-active"; // Laranja
 
             return `
                 <div class="live-pos ${extraClass}" onclick="openSubModal(${i})">
