@@ -24,13 +24,67 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+
+        // Funções globais de Dados
+        window.carregarDadosIniciais = async function() {
+            await carregarEscaloes();
+            await carregarAtletas();
+        };
+
+        window.carregarEscaloes = async function() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "escaloes_fitescola"));
+                window.escaloesGlobais = [];
+                querySnapshot.forEach((docSnap) => {
+                    window.escaloesGlobais.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                // Se não houver nenhum escalão na BD, cria predefinidos
+                if (window.escaloesGlobais.length === 0) {
+                    const padroes = ["Iniciadas", "Cadetes", "Veteranos"];
+                    for (let nome of padroes) {
+                        await addDoc(collection(db, "escaloes_fitescola"), { nome });
+                    }
+                    return carregarEscaloes();
+                }
+
+                atualizarSelectsEscaloes();
+            } catch (e) {
+                console.error("Erro ao carregar escalões:", e);
+            }
+        };
+
+        window.adicionarEscalaoFirebase = async function(nome) {
+            try {
+                await addDoc(collection(db, "escaloes_fitescola"), { nome });
+                await carregarEscaloes();
+            } catch (e) {
+                console.error("Erro ao adicionar escalão:", e);
+            }
+        };
+
+        window.apagarEscalaoFirebase = async function(id) {
+            try {
+                await deleteDoc(doc(db, "escaloes_fitescola", id));
+                await carregarEscaloes();
+            } catch (e) {
+                console.error("Erro ao apagar escalão:", e);
+            }
+        };
+
         window.guardarAtletaFirebase = async function(dadosAtleta) {
             try {
                 await addDoc(collection(db, "atletas_fitescola"), dadosAtleta);
                 carregarAtletas();
             } catch (e) {
-                console.error("Erro ao guardar no Firebase: ", e);
-                alert("Erro ao guardar dados. Verifica as regras do Firestore.");
+                console.error("Erro ao guardar atleta: ", e);
+                alert("Erro ao guardar dados.");
             }
         };
 
@@ -40,7 +94,7 @@
                     await deleteDoc(doc(db, "atletas_fitescola", id));
                     carregarAtletas();
                 } catch (e) {
-                    console.error("Erro ao eliminar: ", e);
+                    console.error("Erro ao eliminar atleta: ", e);
                 }
             }
         };
@@ -57,13 +111,13 @@
                 });
                 renderizarTabelaLocal();
             } catch (e) {
-                console.error("Erro ao carregar dados: ", e);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500">Erro ao ligar à base de dados. Confirma se alteraste as regras para 'allow read, write: if true;' no Firebase.</td></tr>`;
+                console.error("Erro ao carregar atletas: ", e);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500">Erro ao ligar à base de dados. Confirma se alteraste as regras no Firebase.</td></tr>`;
             }
         };
 
         window.onload = () => {
-            carregarAtletas();
+            carregarDadosIniciais();
             document.getElementById('filtroEscalao').addEventListener('change', renderizarTabelaLocal);
         };
     </script>
@@ -71,10 +125,9 @@
 <body class="bg-white text-zinc-900 min-h-screen font-sans selection:bg-zinc-900 selection:text-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         
-        <!-- Cabeçalho com Logótipo -->
+        <!-- Cabeçalho -->
         <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-200 pb-6 gap-4">
             <div class="flex items-center gap-4">
-                <!-- Logótipo integrado com fallback visual -->
                 <div class="h-12 w-12 rounded-xl bg-zinc-900 flex items-center justify-center overflow-hidden border border-zinc-200 shadow-xs">
                     <img src="logo.png" alt="Logo Académicos" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML='<span class=\'text-white font-bold text-sm\'>ACA</span>'">
                 </div>
@@ -83,13 +136,11 @@
                     <p class="text-zinc-500 text-xs sm:text-sm">Base de Dados em Nuvem (Firebase)</p>
                 </div>
             </div>
-            <div class="w-full sm:w-auto flex gap-3">
-                <select id="filtroEscalao" class="w-full sm:w-auto bg-zinc-50 border border-zinc-300 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-700 focus:outline-none focus:border-zinc-900 transition">
+            <div class="w-full sm:w-auto flex flex-wrap gap-3 items-center">
+                <select id="filtroEscalao" class="bg-zinc-50 border border-zinc-300 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-700 focus:outline-none focus:border-zinc-900 transition">
                     <option value="todos">Todos os Escalões</option>
-                    <option value="Iniciadas">Iniciadas</option>
-                    <option value="Cadetes">Cadetes</option>
-                    <option value="Veteranos">Veteranos</option>
                 </select>
+                <button onclick="abrirModalEscaloes()" class="bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-800 text-sm font-medium px-4 py-2.5 rounded-lg transition">Gerir Escalões</button>
             </div>
         </header>
 
@@ -103,10 +154,8 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Escalão</label>
-                    <select id="escalao" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900">
-                        <option value="Iniciadas">Iniciadas</option>
-                        <option value="Cadetes">Cadetes</option>
-                        <option value="Veteranos">Veteranos</option>
+                    <select id="escalaoForm" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900">
+                        <!-- Preenchido dinamicamente -->
                     </select>
                 </div>
                 <div>
@@ -179,9 +228,104 @@
 
     </div>
 
-    <!-- Script de Lógica e Renderização -->
+    <!-- Modal de Gestão de Escalões -->
+    <div id="modalEscaloes" class="fixed inset-0 bg-zinc-900/50 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 border border-zinc-200 shadow-xl">
+            <div class="flex justify-between items-center mb-4 border-b border-zinc-200 pb-3">
+                <h3 class="font-bold text-zinc-900 text-lg">Gerir Escalões</h3>
+                <button onclick="fecharModalEscaloes()" class="text-zinc-400 hover:text-zinc-900 font-bold text-sm">✕</button>
+            </div>
+            <div class="mb-5 flex gap-2">
+                <input type="text" id="novoEscalaoInput" placeholder="Nome do novo escalão..." class="flex-1 bg-zinc-50 border border-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-zinc-900">
+                <button onclick="adicionarEscalaoHandler()" class="bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Adicionar</button>
+            </div>
+            <div class="max-h-60 overflow-y-auto divide-y divide-zinc-100 border border-zinc-200 rounded-lg p-2" id="listaEscaloesModal">
+                <!-- Lista de escalões existentes -->
+            </div>
+            <div class="mt-5 text-right">
+                <button onclick="fecharModalEscaloes()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 px-5 py-2 rounded-lg text-sm font-medium transition">Concluído</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de Gestão e Lógica -->
     <script>
         window.atletasGlobais = window.atletasGlobais || [];
+        window.escaloesGlobais = window.escaloesGlobais || [];
+
+        window.atualizarSelectsEscaloes = function() {
+            const selectFiltro = document.getElementById('filtroEscalao');
+            const selectForm = document.getElementById('escalaoForm');
+            
+            const valorFiltroAtual = selectFiltro.value;
+            const valorFormAtual = selectForm.value;
+
+            selectFiltro.innerHTML = `<option value="todos">Todos os Escalões</option>`;
+            selectForm.innerHTML = '';
+
+            window.escaloesGlobais.forEach(esc => {
+                selectFiltro.innerHTML += `<option value="${esc.nome}">${esc.nome}</option>`;
+                selectForm.innerHTML += `<option value="${esc.nome}">${esc.nome}</option>`;
+            });
+
+            if(valorFiltroAtual) selectFiltro.value = valorFiltroAtual;
+            if(valorFormAtual) selectForm.value = valorFormAtual;
+
+            renderizarTabelaLocal();
+        }
+
+        window.abrirModalEscaloes = function() {
+            document.getElementById('modalEscaloes').classList.remove('hidden');
+            document.getElementById('modalEscaloes').classList.add('flex');
+            renderizarListaModal();
+        }
+
+        window.fecharModalEscaloes = function() {
+            document.getElementById('modalEscaloes').classList.remove('flex');
+            document.getElementById('modalEscaloes').classList.add('hidden');
+        }
+
+        window.renderizarListaModal = function() {
+            const container = document.getElementById('listaEscaloesModal');
+            container.innerHTML = '';
+            
+            if(window.escaloesGlobais.length === 0) {
+                container.innerHTML = `<p class="text-xs text-zinc-400 text-center py-2">Nenhum escalão registado.</p>`;
+                return;
+            }
+
+            window.escaloesGlobais.forEach(esc => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center py-2 px-2 text-sm";
+                div.innerHTML = `
+                    <span class="font-medium text-zinc-800">${esc.nome}</span>
+                    <button onclick="apagarEscalaoHandler('${esc.id}')" class="text-rose-500 hover:text-rose-700 text-xs bg-rose-50 border border-rose-200 px-2.5 py-1 rounded transition">Remover</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.adicionarEscalaoHandler = async function() {
+            const input = document.getElementById('novoEscalaoInput');
+            const nome = input.value.trim();
+            if(!nome) return alert("Insere um nome válido para o escalão.");
+            
+            // Verificar se já existe
+            if(window.escaloesGlobais.some(e => e.nome.toLowerCase() === nome.toLowerCase())) {
+                return alert("Esse escalão já existe.");
+            }
+
+            await window.adicionarEscalaoFirebase(nome);
+            input.value = '';
+            renderizarListaModal();
+        }
+
+        window.apagarEscalaoHandler = async function(id) {
+            if(confirm("Tens a certeza que pretendes apagar este escalão?")) {
+                await window.apagarEscalaoFirebase(id);
+                renderizarListaModal();
+            }
+        }
 
         function avaliarTeste(tipo, genero, idade, valor) {
             if (valor === null || isNaN(valor)) return '-';
@@ -214,14 +358,14 @@
 
             const novoAtleta = {
                 nome: document.getElementById('nome').value,
-                escalao: document.getElementById('escalao').value,
+                escalao: document.getElementById('escalaoForm').value,
                 genero: document.getElementById('genero').value,
                 idade: parseInt(document.getElementById('idade').value),
                 peso: parseFloat(document.getElementById('peso').value),
                 altura: parseFloat(document.getElementById('altura').value),
                 abdominais: parseInt(document.getElementById('abdominais').value) || null,
                 impulsaoH: parseFloat(document.getElementById('impulsaoH').value) || null,
-                t4x10: parseFloat(document.getElementById('t4x105').value) || parseFloat(document.getElementById('t4x10').value) || null,
+                t4x10: parseFloat(document.getElementById('t4x10').value) || null,
                 sentaAlcanc: parseFloat(document.getElementById('sentaAlcanc').value) || null
             };
 
