@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitorização de Aptidão Física - Académicos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK (Modular via CDNs) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAw6QMLT4cPJsON_XQ5hjMdItWmz6Y_DCQ",
+            authDomain: "testeforca-7dc43.firebaseapp.com",
+            projectId: "testeforca-7dc43",
+            storageBucket: "testeforca-7dc43.appspot.com",
+            messagingSenderId: "390234570412",
+            appId: "1:390234570412:web:bc011630e2001d367e6909",
+            measurementId: "G-NX58PBJ3T"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.guardarAtletaFirebase = async function(dadosAtleta) {
+            try {
+                await addDoc(collection(db, "atletas_fitescola"), dadosAtleta);
+                carregarAtletas();
+            } catch (e) {
+                console.error("Erro ao guardar no Firebase: ", e);
+                alert("Erro ao guardar dados.");
+            }
+        };
+
+        window.apagarAtletaFirebase = async function(id) {
+            if(confirm("Tens a certeza que pretendes eliminar este registo?")) {
+                try {
+                    await deleteDoc(doc(db, "atletas_fitescola", id));
+                    carregarAtletas();
+                } catch (e) {
+                    console.error("Erro ao eliminar: ", e);
+                }
+            }
+        };
+
+        window.carregarAtletas = async function() {
+            const tbody = document.getElementById('tabelaCorpo');
+            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-zinc-400">A carregar dados da nuvem...</td></tr>`;
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "atletas_fitescola"));
+                window.atletasGlobais = [];
+                querySnapshot.forEach((docSnap) => {
+                    window.atletasGlobais.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                renderizarTabelaLocal();
+            } catch (e) {
+                console.error("Erro ao carregar dados: ", e);
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500">Erro ao ligar à base de dados.</td></tr>`;
+            }
+        };
+
+        window.onload = () => {
+            carregarAtletas();
+            document.getElementById('filtroEscalao').addEventListener('change', renderizarTabelaLocal);
+        };
+    </script>
+</head>
+<body class="bg-white text-zinc-900 min-h-screen font-sans selection:bg-zinc-900 selection:text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        
+        <!-- Cabeçalho -->
+        <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-200 pb-6 gap-4">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="Logo Académicos" class="h-12 w-auto object-contain" onerror="this.style.display='none'">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">Aptidão Física - Académicos</h1>
+                    <p class="text-zinc-500 text-xs sm:text-sm">Base de Dados em Nuvem (Firebase)</p>
+                </div>
+            </div>
+            <div class="w-full sm:w-auto flex gap-3">
+                <select id="filtroEscalao" class="w-full sm:w-auto bg-zinc-50 border border-zinc-300 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-700 focus:outline-none focus:border-zinc-900 transition">
+                    <option value="todos">Todos os Escalões</option>
+                    <option value="Iniciadas">Iniciadas</option>
+                    <option value="Cadetes">Cadetes</option>
+                    <option value="Veteranos">Veteranos</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Formulário Completo de Registo -->
+        <section class="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 sm:p-8 mb-10 shadow-sm">
+            <h2 class="text-base sm:text-lg font-semibold mb-6 text-zinc-900 border-b border-zinc-200 pb-3">Registar Nova Avaliação Completa</h2>
+            <form id="formAtleta" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Nome do Atleta</label>
+                    <input type="text" id="nome" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Nome completo">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Escalão</label>
+                    <select id="escalao" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900">
+                        <option value="Iniciadas">Iniciadas</option>
+                        <option value="Cadetes">Cadetes</option>
+                        <option value="Veteranos">Veteranos</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Género</label>
+                    <select id="genero" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900">
+                        <option value="F">Feminino</option>
+                        <option value="M">Masculino</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Idade</label>
+                    <input type="number" id="idade" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 14">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Peso (kg)</label>
+                    <input type="number" step="0.1" id="peso" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 55">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Altura (m)</label>
+                    <input type="number" step="0.01" id="altura" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 1.65">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Abdominais (rep.)</label>
+                    <input type="number" id="abdominais" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 20">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Impulsão Horizontal (cm)</label>
+                    <input type="number" step="0.1" id="impulsaoH" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 130">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Agilidade 4x10m (s)</label>
+                    <input type="number" step="0.01" id="t4x10" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 12.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Senta e Alcança (cm)</label>
+                    <input type="number" step="0.1" id="sentaAlcanc" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 25">
+                </div>
+                <div class="sm:col-span-2 lg:col-span-4 flex justify-end pt-2">
+                    <button type="submit" class="w-full sm:w-auto bg-zinc-900 hover:bg-zinc-800 text-white font-medium px-8 py-3 rounded-lg text-sm transition shadow-sm">Guardar na Nuvem</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Tabela de Resultados -->
+        <section class="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+            <div class="p-5 sm:p-6 border-b border-zinc-200 flex justify-between items-center bg-zinc-50/50">
+                <h2 class="text-base sm:text-lg font-semibold text-zinc-900">Relatório de Atletas (Sincronizado)</h2>
+                <span id="totalAtletas" class="text-xs font-medium bg-zinc-200 text-zinc-700 px-3 py-1 rounded-full">0 registos</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-zinc-100 text-zinc-600 text-xs uppercase tracking-wider border-b border-zinc-200">
+                            <th class="p-4 font-semibold">Atleta</th>
+                            <th class="p-4 font-semibold">Escalão</th>
+                            <th class="p-4 font-semibold">IMC</th>
+                            <th class="p-4 font-semibold">Abdominais</th>
+                            <th class="p-4 font-semibold">Impulsão H.</th>
+                            <th class="p-4 font-semibold">4x10m</th>
+                            <th class="p-4 font-semibold">Senta & Alcança</th>
+                            <th class="p-4 font-semibold text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaCorpo" class="text-sm divide-y divide-zinc-200">
+                        <!-- Preenchido via script -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Script de Lógica e Renderização -->
+    <script>
+        window.atletasGlobais = window.atletasGlobais || [];
+
+        function avaliarTeste(tipo, genero, idade, valor) {
+            if (valor === null || isNaN(valor)) return '-';
+            let saudavel = false;
+            if (tipo === 'abdominais') {
+                saudavel = valor >= (idade <= 11 ? 15 : 18);
+            } else if (tipo === 't4x10') {
+                saudavel = valor <= (genero === 'F' ? 12.70 : 11.70);
+            } else if (tipo === 'impulsaoH') {
+                saudavel = valor >= (genero === 'F' ? 115 : 135);
+            } else if (tipo === 'sentaAlcanc') {
+                saudavel = valor >= 25.0;
+            }
+            return saudavel 
+                ? `<span class="text-zinc-900 font-semibold border-b border-zinc-900">Zona Saudável</span>` 
+                : `<span class="text-zinc-500">A melhorar</span>`;
+        }
+
+        function calcularIMC(peso, altura) {
+            let imc = peso / (altura * altura);
+            let status = "Normal";
+            if (imc < 18.5) status = "Baixo Peso";
+            else if (imc >= 25 && imc < 30) status = "Excesso Peso";
+            else if (imc >= 30) status = "Obesidade";
+            return { valor: imc.toFixed(1), status };
+        }
+
+        document.getElementById('formAtleta').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const novoAtleta = {
+                nome: document.getElementById('nome').value,
+                escalao: document.getElementById('escalao').value,
+                genero: document.getElementById('genero').value,
+                idade: parseInt(document.getElementById('idade').value),
+                peso: parseFloat(document.getElementById('peso').value),
+                altura: parseFloat(document.getElementById('altura').value),
+                abdominais: parseInt(document.getElementById('abdominais').value) || null,
+                impulsaoH: parseFloat(document.getElementById('impulsaoH').value) || null,
+                t4x10: parseFloat(document.getElementById('t4x10').value) || null,
+                sentaAlcanc: parseFloat(document.getElementById('sentaAlcanc').value) || null
+            };
+
+            window.guardarAtletaFirebase(novoAtleta);
+            this.reset();
+        });
+
+        window.renderizarTabelaLocal = function() {
+            const tbody = document.getElementById('tabelaCorpo');
+            const filtro = document.getElementById('filtroEscalao').value;
+            tbody.innerHTML = '';
+
+            const filtrados = window.atletasGlobais.filter(a => filtro === 'todos' || a.escalao === filtro);
+            document.getElementById('totalAtletas').innerText = `${filtrados.length} registos`;
+
+            if (filtrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-zinc-400">Nenhum registo encontrado na nuvem.</td></tr>`;
+                return;
+            }
+
+            filtrados.forEach(a => {
+                const imc = calcularIMC(a.peso, a.altura);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-zinc-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-zinc-900">${a.nome}<br><span class="text-xs text-zinc-500 font-normal">${a.idade}a (${a.genero})</span></td>
+                    <td class="p-4"><span class="bg-zinc-100 border border-zinc-200 text-xs px-2 py-1 rounded text-zinc-700">${a.escalao}</span></td>
+                    <td class="p-4"><span class="font-bold">${imc.valor}</span><br><span class="text-xs text-zinc-600">${imc.status}</span></td>
+                    <td class="p-4">${a.abdominais !== null ? `${a.abdominais} rep.<br><span class="text-xs">${avaliarTeste('abdominais', a.genero, a.idade, a.abdominais)}</span>` : '-'}</td>
+                    <td class="p-4">${a.impulsaoH !== null ? `${a.impulsaoH} cm<br><span class="text-xs">${avaliarTeste('impulsaoH', a.genero, a.idade, a.impulsaoH)}</span>` : '-'}</td>
+                    <td class="p-4">${a.t4x10 !== null ? `${a.t4x10}s<br><span class="text-xs">${avaliarTeste('t4x10', a.genero, a.idade, a.t4x10)}</span>` : '-'}</td>
+                    <td class="p-4">${a.sentaAlcanc !== null ? `${a.sentaAlcanc} cm<br><span class="text-xs">${avaliarTeste('sentaAlcanc', a.genero, a.idade, a.sentaAlcanc)}</span>` : '-'}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="apagarAtletaFirebase('${a.id}')" class="text-zinc-400 hover:text-zinc-900 text-xs bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded transition">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
