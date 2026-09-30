@@ -30,7 +30,7 @@
                 carregarAtletas();
             } catch (e) {
                 console.error("Erro ao guardar no Firebase: ", e);
-                alert("Erro ao guardar dados.");
+                alert("Erro ao guardar dados. Verifica as regras do Firestore.");
             }
         };
 
@@ -58,7 +58,7 @@
                 renderizarTabelaLocal();
             } catch (e) {
                 console.error("Erro ao carregar dados: ", e);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500">Erro ao ligar à base de dados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500">Erro ao ligar à base de dados. Confirma se alteraste as regras para 'allow read, write: if true;' no Firebase.</td></tr>`;
             }
         };
 
@@ -71,10 +71,13 @@
 <body class="bg-white text-zinc-900 min-h-screen font-sans selection:bg-zinc-900 selection:text-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         
-        <!-- Cabeçalho -->
+        <!-- Cabeçalho com Logótipo -->
         <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-200 pb-6 gap-4">
             <div class="flex items-center gap-4">
-                <img src="logo.png" alt="Logo Académicos" class="h-12 w-auto object-contain" onerror="this.style.display='none'">
+                <!-- Logótipo integrado com fallback visual -->
+                <div class="h-12 w-12 rounded-xl bg-zinc-900 flex items-center justify-center overflow-hidden border border-zinc-200 shadow-xs">
+                    <img src="logo.png" alt="Logo Académicos" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML='<span class=\'text-white font-bold text-sm\'>ACA</span>'">
+                </div>
                 <div>
                     <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">Aptidão Física - Académicos</h1>
                     <p class="text-zinc-500 text-xs sm:text-sm">Base de Dados em Nuvem (Firebase)</p>
@@ -218,7 +221,7 @@
                 altura: parseFloat(document.getElementById('altura').value),
                 abdominais: parseInt(document.getElementById('abdominais').value) || null,
                 impulsaoH: parseFloat(document.getElementById('impulsaoH').value) || null,
-                t4x10: parseFloat(document.getElementById('t4x10').value) || null,
+                t4x10: parseFloat(document.getElementById('t4x105').value) || parseFloat(document.getElementById('t4x10').value) || null,
                 sentaAlcanc: parseFloat(document.getElementById('sentaAlcanc').value) || null
             };
 
