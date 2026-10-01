@@ -1,410 +1,205 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitorização de Aptidão Física - Académicos</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Firebase SDK (Modular via CDNs) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAw6QMLT4cPJsON_XQ5hjMdItWmz6Y_DCQ",
-            authDomain: "testeforca-7dc43.firebaseapp.com",
-            projectId: "testeforca-7dc43",
-            storageBucket: "testeforca-7dc43.appspot.com",
-            messagingSenderId: "390234570412",
-            appId: "1:390234570412:web:bc011630e2001d367e6909",
-            measurementId: "G-NX58PBJ3T"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        window.db = db;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.getDocs = getDocs;
-        window.deleteDoc = deleteDoc;
-        window.doc = doc;
-
-        // Funções globais de Dados
-        window.carregarDadosIniciais = async function() {
-            await carregarEscaloes();
-            await carregarAtletas();
-        };
-
-        window.carregarEscaloes = async function() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "escaloes_fitescola"));
-                window.escaloesGlobais = [];
-                querySnapshot.forEach((docSnap) => {
-                    window.escaloesGlobais.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                // Se não houver nenhum escalão na BD, cria predefinidos
-                if (window.escaloesGlobais.length === 0) {
-                    const padroes = ["Iniciadas", "Cadetes", "Veteranos"];
-                    for (let nome of padroes) {
-                        await addDoc(collection(db, "escaloes_fitescola"), { nome });
-                    }
-                    return carregarEscaloes();
-                }
-
-                atualizarSelectsEscaloes();
-            } catch (e) {
-                console.error("Erro ao carregar escalões:", e);
-            }
-        };
-
-        window.adicionarEscalaoFirebase = async function(nome) {
-            try {
-                await addDoc(collection(db, "escaloes_fitescola"), { nome });
-                await carregarEscaloes();
-            } catch (e) {
-                console.error("Erro ao adicionar escalão:", e);
-            }
-        };
-
-        window.apagarEscalaoFirebase = async function(id) {
-            try {
-                await deleteDoc(doc(db, "escaloes_fitescola", id));
-                await carregarEscaloes();
-            } catch (e) {
-                console.error("Erro ao apagar escalão:", e);
-            }
-        };
-
-        window.guardarAtletaFirebase = async function(dadosAtleta) {
-            try {
-                await addDoc(collection(db, "atletas_fitescola"), dadosAtleta);
-                carregarAtletas();
-            } catch (e) {
-                console.error("Erro ao guardar atleta: ", e);
-                alert("Erro ao guardar dados.");
-            }
-        };
-
-        window.apagarAtletaFirebase = async function(id) {
-            if(confirm("Tens a certeza que pretendes eliminar este registo?")) {
-                try {
-                    await deleteDoc(doc(db, "atletas_fitescola", id));
-                    carregarAtletas();
-                } catch (e) {
-                    console.error("Erro ao eliminar atleta: ", e);
-                }
-            }
-        };
-
-        window.carregarAtletas = async function() {
-            const tbody = document.getElementById('tabelaCorpo');
-            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-zinc-400">A carregar dados da nuvem...</td></tr>`;
-            
-            try {
-                const querySnapshot = await getDocs(collection(db, "atletas_fitescola"));
-                window.atletasGlobais = [];
-                querySnapshot.forEach((docSnap) => {
-                    window.atletasGlobais.push({ id: docSnap.id, ...docSnap.data() });
-                });
-                renderizarTabelaLocal();
-            } catch (e) {
-                console.error("Erro ao carregar atletas: ", e);
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-rose-500">Erro ao ligar à base de dados. Confirma se alteraste as regras no Firebase.</td></tr>`;
-            }
-        };
-
-        window.onload = () => {
-            carregarDadosIniciais();
-            document.getElementById('filtroEscalao').addEventListener('change', renderizarTabelaLocal);
-        };
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aptidão Física - Académicos</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-white text-zinc-900 min-h-screen font-sans selection:bg-zinc-900 selection:text-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        
-        <!-- Cabeçalho -->
-        <header class="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-200 pb-6 gap-4">
-            <div class="flex items-center gap-4">
-                <div class="h-12 w-12 rounded-xl bg-zinc-900 flex items-center justify-center overflow-hidden border border-zinc-200 shadow-xs">
-                    <img src="logo.png" alt="Logo Académicos" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML='<span class=\'text-white font-bold text-sm\'>ACA</span>'">
-                </div>
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">Aptidão Física - Académicos</h1>
-                    <p class="text-zinc-500 text-xs sm:text-sm">Base de Dados em Nuvem (Firebase)</p>
-                </div>
-            </div>
-            <div class="w-full sm:w-auto flex flex-wrap gap-3 items-center">
-                <select id="filtroEscalao" class="bg-zinc-50 border border-zinc-300 rounded-lg px-4 py-2.5 text-sm font-medium text-zinc-700 focus:outline-none focus:border-zinc-900 transition">
-                    <option value="todos">Todos os Escalões</option>
-                </select>
-                <button onclick="abrirModalEscaloes()" class="bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-800 text-sm font-medium px-4 py-2.5 rounded-lg transition">Gerir Escalões</button>
-            </div>
-        </header>
-
-        <!-- Formulário Completo de Registo -->
-        <section class="bg-zinc-50 border border-zinc-200 rounded-2xl p-6 sm:p-8 mb-10 shadow-sm">
-            <h2 class="text-base sm:text-lg font-semibold mb-6 text-zinc-900 border-b border-zinc-200 pb-3">Registar Nova Avaliação Completa</h2>
-            <form id="formAtleta" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Nome do Atleta</label>
-                    <input type="text" id="nome" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Nome completo">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Escalão</label>
-                    <select id="escalaoForm" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900">
-                        <!-- Preenchido dinamicamente -->
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Género</label>
-                    <select id="genero" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900">
-                        <option value="F">Feminino</option>
-                        <option value="M">Masculino</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Idade</label>
-                    <input type="number" id="idade" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 14">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Peso (kg)</label>
-                    <input type="number" step="0.1" id="peso" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 55">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Altura (m)</label>
-                    <input type="number" step="0.01" id="altura" required class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 1.65">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Abdominais (rep.)</label>
-                    <input type="number" id="abdominais" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 20">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Impulsão Horizontal (cm)</label>
-                    <input type="number" step="0.1" id="impulsaoH" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 130">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Agilidade 4x10m (s)</label>
-                    <input type="number" step="0.01" id="t4x10" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 12.5">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Senta e Alcança (cm)</label>
-                    <input type="number" step="0.1" id="sentaAlcanc" class="w-full bg-white border border-zinc-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-zinc-900" placeholder="Ex: 25">
-                </div>
-                <div class="sm:col-span-2 lg:col-span-4 flex justify-end pt-2">
-                    <button type="submit" class="w-full sm:w-auto bg-zinc-900 hover:bg-zinc-800 text-white font-medium px-8 py-3 rounded-lg text-sm transition shadow-sm">Guardar na Nuvem</button>
-                </div>
-            </form>
-        </section>
-
-        <!-- Tabela de Resultados -->
-        <section class="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
-            <div class="p-5 sm:p-6 border-b border-zinc-200 flex justify-between items-center bg-zinc-50/50">
-                <h2 class="text-base sm:text-lg font-semibold text-zinc-900">Relatório de Atletas (Sincronizado)</h2>
-                <span id="totalAtletas" class="text-xs font-medium bg-zinc-200 text-zinc-700 px-3 py-1 rounded-full">0 registos</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-zinc-100 text-zinc-600 text-xs uppercase tracking-wider border-b border-zinc-200">
-                            <th class="p-4 font-semibold">Atleta</th>
-                            <th class="p-4 font-semibold">Escalão</th>
-                            <th class="p-4 font-semibold">IMC</th>
-                            <th class="p-4 font-semibold">Abdominais</th>
-                            <th class="p-4 font-semibold">Impulsão H.</th>
-                            <th class="p-4 font-semibold">4x10m</th>
-                            <th class="p-4 font-semibold">Senta & Alcança</th>
-                            <th class="p-4 font-semibold text-center">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaCorpo" class="text-sm divide-y divide-zinc-200">
-                        <!-- Preenchido via script -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
+<body class="bg-white text-zinc-900 min-h-screen font-sans">
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <header class="mb-6 flex flex-wrap justify-between items-center border-b pb-4 gap-3">
+    <h1 class="text-2xl font-bold">Aptidão Física - Académicos</h1>
+    <div class="flex gap-2">
+      <select id="filtroEscalao" class="border rounded-lg px-3 py-2 text-sm"><option value="todos">Todos os Escalões</option></select>
+      <button onclick="abrirModal()" class="bg-zinc-100 border rounded-lg px-3 py-2 text-sm">Gerir Escalões</button>
     </div>
+  </header>
 
-    <!-- Modal de Gestão de Escalões -->
-    <div id="modalEscaloes" class="fixed inset-0 bg-zinc-900/50 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 border border-zinc-200 shadow-xl">
-            <div class="flex justify-between items-center mb-4 border-b border-zinc-200 pb-3">
-                <h3 class="font-bold text-zinc-900 text-lg">Gerir Escalões</h3>
-                <button onclick="fecharModalEscaloes()" class="text-zinc-400 hover:text-zinc-900 font-bold text-sm">✕</button>
-            </div>
-            <div class="mb-5 flex gap-2">
-                <input type="text" id="novoEscalaoInput" placeholder="Nome do novo escalão..." class="flex-1 bg-zinc-50 border border-zinc-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-zinc-900">
-                <button onclick="adicionarEscalaoHandler()" class="bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Adicionar</button>
-            </div>
-            <div class="max-h-60 overflow-y-auto divide-y divide-zinc-100 border border-zinc-200 rounded-lg p-2" id="listaEscaloesModal">
-                <!-- Lista de escalões existentes -->
-            </div>
-            <div class="mt-5 text-right">
-                <button onclick="fecharModalEscaloes()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 px-5 py-2 rounded-lg text-sm font-medium transition">Concluído</button>
-            </div>
-        </div>
+  <section class="bg-zinc-50 border rounded-2xl p-5 mb-6">
+    <h2 class="font-semibold mb-4">Registar Avaliação</h2>
+    <form id="formAtleta" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></form>
+  </section>
+
+  <section class="border rounded-2xl overflow-hidden">
+    <div class="p-4 flex justify-between bg-zinc-50 border-b">
+      <h2 class="font-semibold">Relatório</h2><span id="total" class="text-xs bg-zinc-200 px-3 py-1 rounded-full">0 registos</span>
     </div>
+    <div class="overflow-x-auto"><table class="w-full text-left text-sm">
+      <thead id="thead" class="bg-zinc-100 text-xs uppercase"></thead>
+      <tbody id="tbody" class="divide-y"></tbody>
+    </table></div>
+  </section>
+</div>
 
-    <!-- Script de Gestão e Lógica -->
-    <script>
-        window.atletasGlobais = window.atletasGlobais || [];
-        window.escaloesGlobais = window.escaloesGlobais || [];
+<div id="modal" class="fixed inset-0 bg-zinc-900/50 hidden items-center justify-center p-4 z-50">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6">
+    <div class="flex justify-between mb-3"><h3 class="font-bold">Gerir Escalões</h3><button onclick="fecharModal()">✕</button></div>
+    <div class="flex gap-2 mb-3"><input id="novoEsc" class="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="Novo escalão"><button onclick="addEsc()" class="bg-zinc-900 text-white px-4 rounded-lg text-sm">Adicionar</button></div>
+    <div id="listaEsc" class="max-h-60 overflow-y-auto"></div>
+  </div>
+</div>
 
-        window.atualizarSelectsEscaloes = function() {
-            const selectFiltro = document.getElementById('filtroEscalao');
-            const selectForm = document.getElementById('escalaoForm');
-            
-            const valorFiltroAtual = selectFiltro.value;
-            const valorFormAtual = selectForm.value;
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-            selectFiltro.innerHTML = `<option value="todos">Todos os Escalões</option>`;
-            selectForm.innerHTML = '';
+const db = getFirestore(initializeApp({
+  apiKey: "AIzaSyAw6QMLT4cPJsON_XQ5hjMdItWmz6Y_DCQ", authDomain: "testeforca-7dc43.firebaseapp.com",
+  projectId: "testeforca-7dc43", storageBucket: "testeforca-7dc43.appspot.com",
+  messagingSenderId: "390234570412", appId: "1:390234570412:web:bc011630e2001d367e6909"
+}));
 
-            window.escaloesGlobais.forEach(esc => {
-                selectFiltro.innerHTML += `<option value="${esc.nome}">${esc.nome}</option>`;
-                selectForm.innerHTML += `<option value="${esc.nome}">${esc.nome}</option>`;
-            });
+/* ===== TABELAS DE REFERÊNCIA (idades 9..18+) : [Zona Saudável, Perfil Atlético] =====
+   dir 'max' = maior é melhor (≥) ; 'min' = menor é melhor (≤)
+   null = valor não fornecido nas imagens (preencher) */
+const REF = {
+ F: {
+  abd:  [[9,39],[12,39],[15,46],[18,53],[18,57],[18,59],[18,62],[18,63],[18,65],[18,66]],
+  flex: [[6,14],[7,15],[7,15],[7,15],[7,16],[7,16],[7,17],[7,18],[7,19],[7,19]],
+  impH: [[108.4,170.9],[110.8,172.4],[113.3,173.8],[115.8,175.3],[118.1,176.4],[121.8,179.6],[123,179],[126,180.4],[129.5,183.4],[131.9,184.2]],
+  impV: [[17.9,29.9],[18.3,30.4],[18.6,30.8],[19,31.3],[19,31.3],[20,32.5],[20.3,32.8],[20.9,33.6],[20.5,33],[20.5,34]],
+  t4x10:[[13.2,11.73],[13.1,11.67],[13,11.61],[12.9,11.55],[12.8,11.5],[12.7,11.4],[12.7,11.4],[12.6,11.3],[12.6,11.4],[12.6,11.4]],
+  v40:  [[8.55,7.51],[8.23,7.23],[7.97,7],[7.77,6.82],[7.62,6.69],[7.52,6.61],[7.49,6.58],[7.51,6.6],[7.58,6.67],[7.72,6.79]],
+  v20:  [[4.55,4.02],[4.43,3.9],[4.32,3.8],[4.24,3.73],[4.19,3.68],[4.16,3.66],[4.16,3.66],[4.18,3.69],[4.23,3.75],[4.31,3.83]],
+  senta:[[22.9,31.2],[22.9,31.2],[25.4,31.4],[25.4,32.1],[25.4,33.3],[25.4,34.6],[30.5,35.3],[30.5,35.6],[30.5,36],[30.5,36.3]],
+  imc:  [[13.3,18.7],[13.7,19.4],[14.1,20.3],[14.7,21.3],[15.2,22.3],[15.7,23.1],[16,23.8],[16.3,24.3],[16.4,24.6],[16.5,25]]
+ },
+ M: {
+  abd:  [[9,47],[12,47],[15,54],[18,60],[21,66],[24,71],[24,71],[24,71],[24,71],[24,71]],
+  flex: [[6,17],[7,21],[8,21],[10,21],[12,22],[14,24],[16,27],[18,29],[18,32],[18,34]],
+  impH: [[102.1,160],[110.1,170.2],[119,180.4],[128.4,190.6],[135.4,197.3],[151.5,213.3],[165.4,224.4],[175.9,231.8],[184.2,239],[203.2,251.7]],
+  impV: Array(10).fill(null),
+  t4x10:[[13.1,11.98],[12.8,11.65],[12.5,11.38],[12.2,11.11],[12,10.9],[11.7,10.6],[11.2,10.2],[10.9,9.9],[10.9,9.9],[10.4,9.49]],
+  v40:  Array(10).fill(null),
+  v20:  Array(10).fill(null),
+  senta:[[20.3,29.3],[20.3,29.3],[20.3,28.9],[20.3,28.8],[20.3,29.2],[20.3,30.4],[20.3,31.9],[20.3,33.5],[20.3,34.5],[20.3,35]],
+  imc:  [[12.6,18.2],[13.9,18.8],[13.2,19.5],[14.7,20.4],[15.2,21.3],[15.7,22.2],[16.3,23.1],[16.7,23.9],[17.1,24.6],[18.5,25]]
+ }
+};
 
-            if(valorFiltroAtual) selectFiltro.value = valorFiltroAtual;
-            if(valorFormAtual) selectForm.value = valorFormAtual;
+const TESTES = [
+ {k:'abd',  nome:'Abdominais (rep.)',        step:1,    dir:'max'},
+ {k:'flex', nome:'Flexões (rep.)',           step:1,    dir:'max'},
+ {k:'impH', nome:'Impulsão Horizontal (cm)', step:0.1,  dir:'max'},
+ {k:'impV', nome:'Impulsão Vertical (cm)',   step:0.1,  dir:'max'},
+ {k:'t4x10',nome:'Agilidade 4x10m (s)',      step:0.01, dir:'min'},
+ {k:'v40',  nome:'Velocidade 40m (s)',       step:0.01, dir:'min'},
+ {k:'v20',  nome:'Velocidade 20m (s)',       step:0.01, dir:'min'},
+ {k:'senta',nome:'Senta e Alcança (cm, pode ser negativo)', step:0.1, dir:'max'}
+];
 
-            renderizarTabelaLocal();
-        }
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const idx = idade => Math.min(Math.max(idade, 9), 18) - 9;
 
-        window.abrirModalEscaloes = function() {
-            document.getElementById('modalEscaloes').classList.remove('hidden');
-            document.getElementById('modalEscaloes').classList.add('flex');
-            renderizarListaModal();
-        }
+function avaliar(t, a) {
+  const v = a[t.k];
+  if (v === null || v === undefined || isNaN(v)) return '-';
+  const r = REF[a.genero]?.[t.k]?.[idx(a.idade)];
+  if (!r) return `${v}<br><span class="text-xs text-zinc-400">sem referência</span>`;
+  const ok = (lim) => t.dir === 'max' ? v >= lim : v <= lim;
+  let txt, cls;
+  if (ok(r[1])) { txt = 'Perfil Atlético'; cls = 'text-emerald-700 font-bold'; }
+  else if (ok(r[0])) { txt = 'Zona Saudável'; cls = 'text-sky-700 font-semibold'; }
+  else { txt = 'Abaixo da zona'; cls = 'text-rose-600'; }
+  return `${v}<br><span class="text-xs ${cls}">${txt}</span>`;
+}
 
-        window.fecharModalEscaloes = function() {
-            document.getElementById('modalEscaloes').classList.remove('flex');
-            document.getElementById('modalEscaloes').classList.add('hidden');
-        }
+function imc(a) {
+  const v = a.peso / (a.altura * a.altura);
+  const r = REF[a.genero].imc[idx(a.idade)];
+  const st = v < r[0] ? 'Baixo peso' : v > r[1] ? 'Excesso de peso' : 'Zona Saudável';
+  const cls = st === 'Zona Saudável' ? 'text-sky-700' : 'text-rose-600';
+  return `<b>${v.toFixed(1)}</b><br><span class="text-xs ${cls}">${st}</span>`;
+}
 
-        window.renderizarListaModal = function() {
-            const container = document.getElementById('listaEscaloesModal');
-            container.innerHTML = '';
-            
-            if(window.escaloesGlobais.length === 0) {
-                container.innerHTML = `<p class="text-xs text-zinc-400 text-center py-2">Nenhum escalão registado.</p>`;
-                return;
-            }
+/* ===== Dados ===== */
+let atletas = [], escaloes = [];
+const $ = id => document.getElementById(id);
 
-            window.escaloesGlobais.forEach(esc => {
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center py-2 px-2 text-sm";
-                div.innerHTML = `
-                    <span class="font-medium text-zinc-800">${esc.nome}</span>
-                    <button onclick="apagarEscalaoHandler('${esc.id}')" class="text-rose-500 hover:text-rose-700 text-xs bg-rose-50 border border-rose-200 px-2.5 py-1 rounded transition">Remover</button>
-                `;
-                container.appendChild(div);
-            });
-        }
+async function carregarEscaloes() {
+  const snap = await getDocs(collection(db, "escaloes_fitescola"));
+  escaloes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+  if (!escaloes.length) {
+    for (const nome of ["Infantis", "Iniciados", "Juvenis"]) await addDoc(collection(db, "escaloes_fitescola"), {nome});
+    return carregarEscaloes();
+  }
+  const f = $('filtroEscalao').value, e = $('escalaoForm')?.value;
+  $('filtroEscalao').innerHTML = '<option value="todos">Todos os Escalões</option>' + escaloes.map(x => `<option>${esc(x.nome)}</option>`).join('');
+  $('escalaoForm').innerHTML = escaloes.map(x => `<option>${esc(x.nome)}</option>`).join('');
+  if (f) $('filtroEscalao').value = f; if (e) $('escalaoForm').value = e;
+  renderizar();
+}
+async function carregarAtletas() {
+  $('tbody').innerHTML = '<tr><td colspan="12" class="p-6 text-center text-zinc-400">A carregar...</td></tr>';
+  try {
+    const snap = await getDocs(collection(db, "atletas_fitescola"));
+    atletas = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderizar();
+  } catch (e) { $('tbody').innerHTML = '<tr><td colspan="12" class="p-6 text-center text-rose-500">Erro ao ligar ao Firebase (verifica as regras).</td></tr>'; }
+}
 
-        window.adicionarEscalaoHandler = async function() {
-            const input = document.getElementById('novoEscalaoInput');
-            const nome = input.value.trim();
-            if(!nome) return alert("Insere um nome válido para o escalão.");
-            
-            // Verificar se já existe
-            if(window.escaloesGlobais.some(e => e.nome.toLowerCase() === nome.toLowerCase())) {
-                return alert("Esse escalão já existe.");
-            }
+/* ===== UI ===== */
+const inp = (id, label, extra = '') => `<div><label class="block text-xs font-semibold uppercase text-zinc-500 mb-1">${label}</label><input id="${id}" ${extra} class="w-full border rounded-lg px-3 py-2 text-sm bg-white"></div>`;
+$('formAtleta').innerHTML =
+  inp('nome','Nome','type="text" required') +
+  `<div><label class="block text-xs font-semibold uppercase text-zinc-500 mb-1">Escalão</label><select id="escalaoForm" class="w-full border rounded-lg px-3 py-2 text-sm bg-white"></select></div>` +
+  `<div><label class="block text-xs font-semibold uppercase text-zinc-500 mb-1">Sexo</label><select id="genero" class="w-full border rounded-lg px-3 py-2 text-sm bg-white"><option value="F">Feminino</option><option value="M">Masculino</option></select></div>` +
+  inp('idade','Idade','type="number" min="9" max="30" required') +
+  inp('peso','Peso (kg)','type="number" step="0.1" required') +
+  inp('altura','Altura (m)','type="number" step="0.01" required') +
+  TESTES.map(t => inp(t.k, t.nome, `type="number" step="${t.step}"`)).join('') +
+  `<div class="col-span-2 lg:col-span-4 text-right"><button class="bg-zinc-900 text-white px-8 py-2.5 rounded-lg text-sm">Guardar na Nuvem</button></div>`;
 
-            await window.adicionarEscalaoFirebase(nome);
-            input.value = '';
-            renderizarListaModal();
-        }
+$('thead').innerHTML = '<tr>' + ['Atleta','Escalão','IMC',...TESTES.map(t => t.nome.split(' (')[0]),'Ações'].map(h => `<th class="p-3">${h}</th>`).join('') + '</tr>';
 
-        window.apagarEscalaoHandler = async function(id) {
-            if(confirm("Tens a certeza que pretendes apagar este escalão?")) {
-                await window.apagarEscalaoFirebase(id);
-                renderizarListaModal();
-            }
-        }
+function renderizar() {
+  const f = $('filtroEscalao').value;
+  const lista = atletas.filter(a => f === 'todos' || a.escalao === f);
+  $('total').textContent = `${lista.length} registos`;
+  if (!lista.length) { $('tbody').innerHTML = '<tr><td colspan="12" class="p-6 text-center text-zinc-400">Nenhum registo.</td></tr>'; return; }
+  $('tbody').innerHTML = lista.map(a => `<tr>
+    <td class="p-3 font-semibold">${esc(a.nome)}<br><span class="text-xs text-zinc-500 font-normal">${esc(a.idade)}a (${esc(a.genero)})</span></td>
+    <td class="p-3">${esc(a.escalao)}</td><td class="p-3">${imc(a)}</td>
+    ${TESTES.map(t => `<td class="p-3">${avaliar(t, a)}</td>`).join('')}
+    <td class="p-3"><button data-del="${esc(a.id)}" class="text-xs bg-zinc-100 border px-2 py-1 rounded">Eliminar</button></td></tr>`).join('');
+}
 
-        function avaliarTeste(tipo, genero, idade, valor) {
-            if (valor === null || isNaN(valor)) return '-';
-            let saudavel = false;
-            if (tipo === 'abdominais') {
-                saudavel = valor >= (idade <= 11 ? 15 : 18);
-            } else if (tipo === 't4x10') {
-                saudavel = valor <= (genero === 'F' ? 12.70 : 11.70);
-            } else if (tipo === 'impulsaoH') {
-                saudavel = valor >= (genero === 'F' ? 115 : 135);
-            } else if (tipo === 'sentaAlcanc') {
-                saudavel = valor >= 25.0;
-            }
-            return saudavel 
-                ? `<span class="text-zinc-900 font-semibold border-b border-zinc-900">Zona Saudável</span>` 
-                : `<span class="text-zinc-500">A melhorar</span>`;
-        }
+$('tbody').addEventListener('click', async e => {
+  const id = e.target.dataset.del;
+  if (id && confirm("Eliminar este registo?")) { await deleteDoc(doc(db, "atletas_fitescola", id)); carregarAtletas(); }
+});
+$('filtroEscalao').addEventListener('change', renderizar);
 
-        function calcularIMC(peso, altura) {
-            let imc = peso / (altura * altura);
-            let status = "Normal";
-            if (imc < 18.5) status = "Baixo Peso";
-            else if (imc >= 25 && imc < 30) status = "Excesso Peso";
-            else if (imc >= 30) status = "Obesidade";
-            return { valor: imc.toFixed(1), status };
-        }
+$('formAtleta').addEventListener('submit', async e => {
+  e.preventDefault();
+  const n = id => { const v = $(id).value; return v === '' ? null : parseFloat(v); };   // aceita 0 e negativos
+  const a = { nome: $('nome').value.trim(), escalao: $('escalaoForm').value, genero: $('genero').value,
+              idade: parseInt($('idade').value), peso: n('peso'), altura: n('altura') };
+  TESTES.forEach(t => a[t.k] = n(t.k));
+  try { await addDoc(collection(db, "atletas_fitescola"), a); e.target.reset(); carregarAtletas(); }
+  catch (err) { alert("Erro ao guardar."); }
+});
 
-        document.getElementById('formAtleta').addEventListener('submit', function(e) {
-            e.preventDefault();
+/* ===== Modal escalões ===== */
+function listaEsc() {
+  $('listaEsc').innerHTML = escaloes.map(x => `<div class="flex justify-between py-2 text-sm"><span>${esc(x.nome)}</span><button data-esc="${esc(x.id)}" class="text-rose-600 text-xs">Remover</button></div>`).join('');
+}
+$('listaEsc').addEventListener('click', async e => {
+  const id = e.target.dataset.esc;
+  if (id && confirm("Apagar este escalão?")) { await deleteDoc(doc(db, "escaloes_fitescola", id)); await carregarEscaloes(); listaEsc(); }
+});
+window.abrirModal = () => { $('modal').classList.replace('hidden','flex'); listaEsc(); };
+window.fecharModal = () => $('modal').classList.replace('flex','hidden');
+window.addEsc = async () => {
+  const nome = $('novoEsc').value.trim();
+  if (!nome || escaloes.some(x => x.nome.toLowerCase() === nome.toLowerCase())) return alert("Nome inválido ou já existente.");
+  await addDoc(collection(db, "escaloes_fitescola"), {nome}); $('novoEsc').value = '';
+  await carregarEscaloes(); listaEsc();
+};
 
-            const novoAtleta = {
-                nome: document.getElementById('nome').value,
-                escalao: document.getElementById('escalaoForm').value,
-                genero: document.getElementById('genero').value,
-                idade: parseInt(document.getElementById('idade').value),
-                peso: parseFloat(document.getElementById('peso').value),
-                altura: parseFloat(document.getElementById('altura').value),
-                abdominais: parseInt(document.getElementById('abdominais').value) || null,
-                impulsaoH: parseFloat(document.getElementById('impulsaoH').value) || null,
-                t4x10: parseFloat(document.getElementById('t4x10').value) || null,
-                sentaAlcanc: parseFloat(document.getElementById('sentaAlcanc').value) || null
-            };
-
-            window.guardarAtletaFirebase(novoAtleta);
-            this.reset();
-        });
-
-        window.renderizarTabelaLocal = function() {
-            const tbody = document.getElementById('tabelaCorpo');
-            const filtro = document.getElementById('filtroEscalao').value;
-            tbody.innerHTML = '';
-
-            const filtrados = window.atletasGlobais.filter(a => filtro === 'todos' || a.escalao === filtro);
-            document.getElementById('totalAtletas').innerText = `${filtrados.length} registos`;
-
-            if (filtrados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-zinc-400">Nenhum registo encontrado na nuvem.</td></tr>`;
-                return;
-            }
-
-            filtrados.forEach(a => {
-                const imc = calcularIMC(a.peso, a.altura);
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-zinc-50 transition";
-                tr.innerHTML = `
-                    <td class="p-4 font-semibold text-zinc-900">${a.nome}<br><span class="text-xs text-zinc-500 font-normal">${a.idade}a (${a.genero})</span></td>
-                    <td class="p-4"><span class="bg-zinc-100 border border-zinc-200 text-xs px-2 py-1 rounded text-zinc-700">${a.escalao}</span></td>
-                    <td class="p-4"><span class="font-bold">${imc.valor}</span><br><span class="text-xs text-zinc-600">${imc.status}</span></td>
-                    <td class="p-4">${a.abdominais !== null ? `${a.abdominais} rep.<br><span class="text-xs">${avaliarTeste('abdominais', a.genero, a.idade, a.abdominais)}</span>` : '-'}</td>
-                    <td class="p-4">${a.impulsaoH !== null ? `${a.impulsaoH} cm<br><span class="text-xs">${avaliarTeste('impulsaoH', a.genero, a.idade, a.impulsaoH)}</span>` : '-'}</td>
-                    <td class="p-4">${a.t4x10 !== null ? `${a.t4x10}s<br><span class="text-xs">${avaliarTeste('t4x10', a.genero, a.idade, a.t4x10)}</span>` : '-'}</td>
-                    <td class="p-4">${a.sentaAlcanc !== null ? `${a.sentaAlcanc} cm<br><span class="text-xs">${avaliarTeste('sentaAlcanc', a.genero, a.idade, a.sentaAlcanc)}</span>` : '-'}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="apagarAtletaFirebase('${a.id}')" class="text-zinc-400 hover:text-zinc-900 text-xs bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded transition">Eliminar</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-    </script>
+await carregarEscaloes();
+await carregarAtletas();
+</script>
 </body>
 </html>
