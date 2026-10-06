@@ -68,9 +68,16 @@
         
         .scoreboard { display: flex; justify-content: space-around; align-items: center; background: var(--card); padding: 15px; border-radius: 20px; margin-bottom: 5px; border: 1px solid var(--border); max-width: 400px; margin: 0 auto 5px; }
         .score-num { font-size: 2.5rem; font-weight: 800; color: var(--white); display: block; cursor: pointer; }
-        .score-btn { background: #3f3f46; color: var(--white); border: 1px solid #52525b; padding: 12px; border-radius: 10px; font-weight: 800; width: 100%; margin-top: 10px; }
-        .score-btn.adv { background: var(--accent); color: white; border: none; }
         
+        /* Painel de Ações de Ponto na Live (Analítico) */
+        .live-point-panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; max-width: 400px; margin: 10px auto; display: flex; flex-direction: column; gap: 8px; }
+        .point-btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .btn-live-point { background: #3f3f46; color: var(--white); border: 1px solid #52525b; padding: 10px 4px; border-radius: 8px; font-weight: 800; font-size: 0.7rem; cursor: pointer; text-align: center; }
+        .btn-live-point.ace { background: #2563eb; border-color: #3b82f6; }
+        .btn-live-point.break { background: var(--success); border-color: #16a34a; }
+        .btn-live-point.sideout { background: #0284c7; border-color: #0369a1; }
+        .btn-live-point.adv { background: var(--accent); border-color: #e11d48; }
+
         /* QUADRA LIVE */
         .live-court { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: #1e3a8a; padding: 25px; border-radius: 15px; border: 2px solid white; max-width: 340px; margin: 0 auto; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
         .live-pos { background: rgba(255,255,255,0.15); aspect-ratio: 1; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; border: 1px solid rgba(255,255,255,0.4); position: relative; cursor: pointer; transition: 0.2s; padding: 4px; text-align: center; }
@@ -230,13 +237,25 @@
         <div style="text-align:center; flex:1;">
             <span style="font-size:0.6rem; font-weight:800; color:var(--gray-light);">FCA</span>
             <span class="score-num" id="score-home" onclick="removePoint('home')">0</span>
-            <button class="score-btn" onclick="addPoint('home')">+ PONTO</button>
         </div>
         <div style="font-weight:900; color:var(--gray-light); margin: 0 10px;">VS</div>
         <div style="text-align:center; flex:1;">
             <span style="font-size:0.6rem; font-weight:800; color:var(--gray-light);" id="adv-label">ADV</span>
             <span class="score-num" id="score-away" onclick="removePoint('away')">0</span>
-            <button class="score-btn adv" onclick="addPoint('away')">+ PONTO</button>
+        </div>
+    </div>
+
+    <!-- PAINEL ANALÍTICO DE PONTOS (LIVE) -->
+    <div class="live-point-panel">
+        <div style="font-size:0.65rem; font-weight:bold; color:var(--gray-light); text-align:center; text-transform:uppercase;">Registar Ponto (FCA)</div>
+        <div class="point-btn-grid">
+            <button class="btn-live-point ace" onclick="addPointAnalytic('home', 'ACE')">⚡ ACE (Saque)</button>
+            <button class="btn-live-point break" onclick="addPointAnalytic('home', 'BREAK')">🔄 BREAK POINT</button>
+            <button class="btn-live-point sideout" onclick="addPointAnalytic('home', 'SIDEOUT')">🎯 SIDE OUT</button>
+        </div>
+        <div style="font-size:0.65rem; font-weight:bold; color:var(--accent); text-align:center; text-transform:uppercase; margin-top:4px;">Ponto Oponente</div>
+        <div class="point-btn-grid" style="grid-template-columns: 1fr;">
+            <button class="btn-live-point adv" onclick="addPointAnalytic('away', 'ADV_PONTO')">+ Ponto Adversário</button>
         </div>
     </div>
 
@@ -247,10 +266,11 @@
         <div class="tactic-desc" id="tactic-pos-desc">Defina a função das Passadoras (PAS) na aba Convocação para ver as instruções de transição em quadra.</div>
     </div>
     
-    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
-        <button onclick="undoRotate()" style="background:none; border: 1px solid var(--border); color:var(--gray-light); padding: 8px 15px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">↺ VOLTAR ROTAÇÃO</button>
-        <button onclick="concluirSetAtual()" style="background:var(--success); border: none; color:white; padding: 8px 15px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">💾 SALVAR / CONCLUIR SET</button>
-        <button onclick="resetLive()" style="background:none; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">REINICIAR PLACAR</button>
+    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 15px; flex-wrap: wrap;">
+        <button onclick="undoRotate()" style="background:none; border: 1px solid var(--border); color:var(--gray-light); padding: 8px 12px; border-radius: 10px; font-size: 0.6rem; font-weight: 700;">↺ ROTAÇÃO</button>
+        <button onclick="concluirSetAtual()" style="background:var(--success); border: none; color:white; padding: 8px 12px; border-radius: 10px; font-size: 0.6rem; font-weight: 700;">💾 SALVAR SET</button>
+        <button onclick="gerarRelatorioPDF()" style="background:#2563eb; border: none; color:white; padding: 8px 12px; border-radius: 10px; font-size: 0.6rem; font-weight: 700;">📄 GERAR PDF</button>
+        <button onclick="resetLive()" style="background:none; border: 1px solid var(--accent); color: var(--accent); padding: 8px 12px; border-radius: 10px; font-size: 0.6rem; font-weight: 700;">REINICIAR</button>
     </div>
 </section>
 
@@ -396,6 +416,9 @@
     </div>
 </section>
 
+<!-- ELEMENTO OCULTO PARA GERAÇÃO DO PDF BONITO -->
+<div id="pdf-template-container" style="display:none;"></div>
+
 <!-- SISTEMA INTEGRADO COM FIREBASE E MOTOR DATAVOLLEY CORRIGIDO -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -447,7 +470,8 @@
         usedSubstitutes: { "1": [], "2": [], "3": [], "4": [], "5": [] }, 
         currentSet: "1",
         subsCount: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 },
-        servePointsByPlayer: {} // Controlo de breaks por saque na P1
+        analyticPoints: { "1": { aces: 0, breaks: 0, sideouts: 0 }, "2": { aces: 0, breaks: 0, sideouts: 0 }, "3": { aces: 0, breaks: 0, sideouts: 0 }, "4": { aces: 0, breaks: 0, sideouts: 0 }, "5": { aces: 0, breaks: 0, sideouts: 0 } },
+        servePointsByPlayer: {}
     };
     
     let currentScoutSet = "1";
@@ -672,6 +696,10 @@
     }
 
     window.openPrintableReportWindow = () => {
+        openPrintableReportWindowInternal();
+    };
+
+    function openPrintableReportWindowInternal() {
         const printWindow = window.open('', '_blank');
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
         
@@ -776,10 +804,6 @@
                     .box strong { display: block; font-size: 11px; margin-top: 2px; }
                     .box small { display: block; font-size: 8px; color: #333; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
                     .feedback { background: #f5f5f5; border-left: 3px solid black; padding: 6px 8px; font-size: 10px; font-style: italic; margin-top: 6px; line-height: 1.3; }
-                    @media print {
-                        body { padding: 0; }
-                        .box, .feedback { background: #fff !important; }
-                    }
                 </style>
             </head>
             <body>
@@ -803,6 +827,74 @@
             </html>
         `);
         printWindow.document.close();
+    }
+
+    // Função para gerar PDF elegante diretamente no app
+    window.gerarRelatorioPDF = () => {
+        const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
+        const container = document.getElementById('pdf-template-container');
+        
+        let setsHTML = "";
+        const resultadosSalvos = state.savedResults || {};
+        
+        Object.keys(resultadosSalvos).forEach(setNum => {
+            const res = resultadosSalvos[setNum];
+            const analitico = liveState.analyticPoints[setNum] || { aces: 0, breaks: 0, sideouts: 0 };
+            setsHTML += `
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                    <div style="font-weight: bold; font-size: 13px; color: #0f172a; margin-bottom: 4px; text-transform: uppercase;">SET ${setNum} — Placar Final: FCA ${res.home} × ${res.away} ${res.adv}</div>
+                    <div style="font-size: 11px; color: #475569;">
+                        ⚡ <strong>Aces (Saque Direto):</strong> ${analitico.aces} | 
+                        🔄 <strong>Break Points (Saque c/ transição):</strong> ${analitico.breaks} | 
+                        🎯 <strong>Side Outs (Virada de bola):</strong> ${analitico.sideouts}
+                    </div>
+                </div>
+            `;
+        });
+
+        if(setsHTML === "") {
+            setsHTML = `<p style="font-style: italic; color: #64748b;">Nenhum set foi salvo ainda nesta partida. Clique em "Salvar Set" na aba Live após concluir cada parcial.</p>`;
+        }
+
+        container.innerHTML = `
+            <div style="font-family: Arial, sans-serif; color: #1e293b; background: #ffffff; padding: 25px; width: 700px; box-sizing: border-box;">
+                <div style="border-bottom: 3px solid #0f172a; padding-bottom: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <h1 style="margin: 0; font-size: 20px; color: #0f172a; text-transform: uppercase;">Relatório Tático Oficial — Volei Pro</h1>
+                        <p style="margin: 4px 0 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;">FC Académicos (Juvenis B) vs ${state.advName}</p>
+                    </div>
+                    <div style="text-align: right; font-size: 10px; color: #64748b;">
+                        <div><strong>Data:</strong> ${state.gameDate} (${state.gameTime})</div>
+                        <div><strong>Local:</strong> ${pav}</div>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 14px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #2563eb; padding-left: 8px; margin: 20px 0 10px 0;">Resumo de Sets e Eficiência Analítica</h3>
+                ${setsHTML}
+
+                <h3 style="font-size: 14px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #059669; padding-left: 8px; margin: 25px 0 10px 0;">Histórico e Ocorrências da Partida</h3>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 10px; max-height: 250px; overflow-y: auto;">
+                    ${(state.logs || []).map(l => `<div style="padding: 4px 0; border-bottom: 1px solid #f1f5f9;">${l}</div>`).join('') || 'Sem registos de logs.'}
+                </div>
+
+                <div style="margin-top: 30px; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                    Gerado automaticamente pela plataforma Volei Pro DataVolley Engine — FC Académicos
+                </div>
+            </div>
+        `;
+
+        container.style.display = 'block';
+        const opt = {
+            margin:       10,
+            filename:     `Relatorio_Jogo_${state.advName.replace(/\s+/g, '_')}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().from(container).set(opt).save().then(() => {
+            container.style.display = 'none';
+        });
     };
 
     window.addAthlete = () => {
@@ -873,13 +965,12 @@
     window.toggle = (n) => { state.conv = state.conv.includes(n) ? state.conv.filter(i => i !== n) : [...state.conv, n]; sync(); render(); };
     window.updatePos = (key, val) => { state.sets[key] = val; sync(); render(); };
     
-    // Função corrigida para incluir o nome do adversário na mensagem do WhatsApp
     window.gerarMensagem = () => {
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
         const adversario = state.advName ? `vs ${state.advName}` : '';
         const convocadas = state.atletas.filter(a => state.conv.includes(a.n));
         const passadoras = convocadas.filter(a => state.roles[a.n] === 'PAS').map(a => `➡️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
-        const entradas = convocadas.filter(a => state.roles[a.n] === 'ENT').map(a => `➡️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
+        const entradas = convocadas.filter(a => state.roles[a.n] === 'ENT').map(a => `➡️️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
         const opostas = convocadas.filter(a => state.roles[a.n] === 'OPO').map(a => `➡️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
         const centrais = convocadas.filter(a => state.roles[a.n] === 'CEN').map(a => `➡️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
         const liberos = convocadas.filter(a => state.roles[a.n] === 'LIB').map(a => `➡️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
@@ -907,6 +998,7 @@
         liveState.exceptionalLineup = [false, false, false, false, false, false];
         if (!liveState.usedSubstitutes[s]) liveState.usedSubstitutes[s] = [];
         if (!liveState.closedPositions[s]) liveState.closedPositions[s] = [];
+        if (!liveState.analyticPoints[s]) liveState.analyticPoints[s] = { aces: 0, breaks: 0, sideouts: 0 };
         liveState.serving = liveState.initialServer;
         const serverSelect = document.getElementById('initial-server-selector');
         if(serverSelect) serverSelect.value = liveState.initialServer;
@@ -925,29 +1017,44 @@
         liveState.currentSet = s; liveState.home = 0; liveState.away = 0; sync(); initLiveSet();
     };
     
-    window.addPoint = (team) => {
+    // Função Analítica de Adição de Pontos
+    window.addPointAnalytic = (team, type) => {
         const setNum = liveState.currentSet;
+        if (!liveState.analyticPoints[setNum]) liveState.analyticPoints[setNum] = { aces: 0, breaks: 0, sideouts: 0 };
         if (!liveState.servePointsByPlayer[setNum]) liveState.servePointsByPlayer[setNum] = {};
 
-        if(team === 'home') {
-            if(liveState.serving === 'away') {
-                rotate();
-            } else {
-                // FCA marcou ponto estando no saque (Break point na P1)
-                const serverNum = liveState.currentLineup[5]; // Posição 1 no array renderizado
+        if (team === 'home') {
+            const serverNum = liveState.currentLineup[5]; // Posição 1
+
+            if (type === 'ACE') {
+                liveState.analyticPoints[setNum].aces++;
+                if (liveState.serving === 'away') rotate();
+                liveState.serving = 'home';
                 if (serverNum && serverNum !== "?") {
                     liveState.servePointsByPlayer[setNum][serverNum] = (liveState.servePointsByPlayer[setNum][serverNum] || 0) + 1;
                 }
+            } else if (type === 'BREAK') {
+                liveState.analyticPoints[setNum].breaks++;
+                if (liveState.serving === 'away') rotate();
+                liveState.serving = 'home';
+                if (serverNum && serverNum !== "?") {
+                    liveState.servePointsByPlayer[setNum][serverNum] = (liveState.servePointsByPlayer[setNum][serverNum] || 0) + 1;
+                }
+            } else if (type === 'SIDEOUT') {
+                liveState.analyticPoints[setNum].sideouts++;
+                if (liveState.serving === 'away') {
+                    rotate(); // Virou a bola no saque oponente, ganha o direito de servir
+                }
+                liveState.serving = 'home';
             }
             liveState.home++;
-            liveState.serving = 'home';
         } else {
             liveState.away++;
             liveState.serving = 'away';
         }
         renderLive();
     };
-    
+
     window.removePoint = (team) => {
         if(team === 'home' && liveState.home > 0) liveState.home--;
         if(team === 'away' && liveState.away > 0) liveState.away--;
@@ -996,7 +1103,6 @@
         renderLive();
     };
 
-    // Nova função para Salvar o resultado do Set e registrar os pontos de saque nos logs
     window.concluirSetAtual = () => {
         const setNum = liveState.currentSet;
         const resStr = `SET ${setNum}: FCA ${liveState.home} - ${liveState.away} (${state.advName})`;
@@ -1004,15 +1110,15 @@
         if(!state.savedResults) state.savedResults = {};
         state.savedResults[setNum] = { home: liveState.home, away: liveState.away, adv: state.advName };
 
-        state.logs.push(`✅ ${resStr}`);
+        const analitico = liveState.analyticPoints[setNum] || { aces: 0, breaks: 0, sideouts: 0 };
+        state.logs.push(`✅ ${resStr} [Aces: ${analitico.aces} | Breaks: ${analitico.breaks} | SideOuts: ${analitico.sideouts}]`);
 
-        // Adicionar relatório de pontos no serviço ao log
         const serveStats = liveState.servePointsByPlayer[setNum];
         if (serveStats && Object.keys(serveStats).length > 0) {
             let details = Object.entries(serveStats)
                 .map(([num, pts]) => `Nº${num} (${getDisplayName(num)}): ${pts} pts no saque`)
                 .join(' | ');
-            state.logs.push(`📊 Pontos no Serviço (Set ${setNum}): ${details}`);
+            state.logs.push(`📊 Eficácia de Saque por Atleta (Set ${setNum}): ${details}`);
         }
 
         sync();
