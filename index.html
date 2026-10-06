@@ -247,8 +247,9 @@
         <div class="tactic-desc" id="tactic-pos-desc">Defina a função das Passadoras (PAS) na aba Convocação para ver as instruções de transição em quadra.</div>
     </div>
     
-    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
         <button onclick="undoRotate()" style="background:none; border: 1px solid var(--border); color:var(--gray-light); padding: 8px 15px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">↺ VOLTAR ROTAÇÃO</button>
+        <button onclick="concluirSetAtual()" style="background:var(--success); border: none; color:white; padding: 8px 15px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">💾 SALVAR / CONCLUIR SET</button>
         <button onclick="resetLive()" style="background:none; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; border-radius: 10px; font-size: 0.65rem; font-weight: 700;">REINICIAR PLACAR</button>
     </div>
 </section>
@@ -389,7 +390,10 @@
 <!-- ABA LOGS -->
 <section id="logs" class="section">
     <div id="logs-container" style="max-width: 500px; margin: auto;"></div>
-    <button onclick="clearLogs()" style="width:100%; max-width: 500px; display: block; margin: 20px auto; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold;">LIMPAR HISTÓRICO</button>
+    <div style="display:flex; gap:10px; max-width:500px; margin:20px auto 0;">
+        <button onclick="exportarLogsTxt()" style="flex:1; background:var(--success); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer;">📥 EXPORTAR LOGS TXT</button>
+        <button onclick="clearLogs()" style="flex:1; background: var(--accent); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer;">LIMPAR HISTÓRICO</button>
+    </div>
 </section>
 
 <!-- SISTEMA INTEGRADO COM FIREBASE E MOTOR DATAVOLLEY CORRIGIDO -->
@@ -426,7 +430,8 @@
             {n: 4, nome: "Barbara Fernandes"}, {n: 5, nome: "Beatriz Brito"}, {n: 6, nome: "Matilde Loureiro"},
             {n: 7, nome: "Maria Luisa Soutelo"}, {n: 8, nome: "Nataliia Karpets"}, {n: 9, nome: "Carolina Braga"}, {n: 10, nome: "Clara Pires"}
         ],
-        scoutData: {} 
+        scoutData: {},
+        savedResults: {} 
     };
 
     let liveState = { 
@@ -441,7 +446,8 @@
         closedPositions: { "1": [], "2": [], "3": [], "4": [], "5": [] }, 
         usedSubstitutes: { "1": [], "2": [], "3": [], "4": [], "5": [] }, 
         currentSet: "1",
-        subsCount: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
+        subsCount: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 },
+        servePointsByPlayer: {} // Controlo de breaks por saque na P1
     };
     
     let currentScoutSet = "1";
@@ -512,6 +518,7 @@
         if(snap.exists()) {
             state = { ...state, ...snap.data() };
             if (!state.scoutData) state.scoutData = {};
+            if (!state.savedResults) state.savedResults = {};
             
             document.getElementById('sync-status').style.display = 'block';
             document.getElementById('adv-name').value = state.advName || "";
@@ -865,8 +872,11 @@
     };
     window.toggle = (n) => { state.conv = state.conv.includes(n) ? state.conv.filter(i => i !== n) : [...state.conv, n]; sync(); render(); };
     window.updatePos = (key, val) => { state.sets[key] = val; sync(); render(); };
+    
+    // Função corrigida para incluir o nome do adversário na mensagem do WhatsApp
     window.gerarMensagem = () => {
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
+        const adversario = state.advName ? `vs ${state.advName}` : '';
         const convocadas = state.atletas.filter(a => state.conv.includes(a.n));
         const passadoras = convocadas.filter(a => state.roles[a.n] === 'PAS').map(a => `➡️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
         const entradas = convocadas.filter(a => state.roles[a.n] === 'ENT').map(a => `➡️ Nº${a.n} ${getDisplayName(a)}`).join('\n');
@@ -879,9 +889,10 @@
         if(opostas)    listaFormatada += `\n🤜Opostas:\n\n${opostas}\n`;
         if(centrais)   listaFormatada += `\n🤜Centrais:\n\n${centrais}\n`;
         if(liberos)    listaFormatada += `\n🤜Líberos:\n\n${liberos}\n`;
-        let texto = `${state.gameName} \n\n🏟️   ${pav}\n\n📆   ${state.gameDate}\n⏰ ${state.gameTime}\n(Concentração 1h antes no local)\n\nCONVOCADAS:\n${listaFormatada}`;
+        let texto = `${state.gameName} ${adversario}\n\n🏟️   ${pav}\n\n📆   ${state.gameDate}\n⏰ ${state.gameTime}\n(Concentração 1h antes no local)\n\nCONVOCADAS:\n${listaFormatada}`;
         navigator.clipboard.writeText(texto).then(() => alert("Copiado com sucesso!"));
     };
+
     function validarSet(s) {
         const atual = [1,2,3,4,5,6].map(p => parseInt(state.sets[`s${s}p${p}`])).filter(n => !isNaN(n));
         if (atual.length < 6) return { ok: false, msg: "A aguardar definição das 6 jogadoras..." };
@@ -911,14 +922,22 @@
     };
     
     window.changeSet = (s) => {
-        if (liveState.home > 0 || liveState.away > 0) { state.logs.push(`SET ${liveState.currentSet}: FCA ${liveState.home} - ${liveState.away} (${state.advName})`); }
         liveState.currentSet = s; liveState.home = 0; liveState.away = 0; sync(); initLiveSet();
     };
     
     window.addPoint = (team) => {
+        const setNum = liveState.currentSet;
+        if (!liveState.servePointsByPlayer[setNum]) liveState.servePointsByPlayer[setNum] = {};
+
         if(team === 'home') {
             if(liveState.serving === 'away') {
                 rotate();
+            } else {
+                // FCA marcou ponto estando no saque (Break point na P1)
+                const serverNum = liveState.currentLineup[5]; // Posição 1 no array renderizado
+                if (serverNum && serverNum !== "?") {
+                    liveState.servePointsByPlayer[setNum][serverNum] = (liveState.servePointsByPlayer[setNum][serverNum] || 0) + 1;
+                }
             }
             liveState.home++;
             liveState.serving = 'home';
@@ -975,6 +994,29 @@
         liveState.exceptionalLineup[3] = oldExp[0]; liveState.exceptionalLineup[0] = oldExp[1]; liveState.exceptionalLineup[1] = oldExp[2];
         
         renderLive();
+    };
+
+    // Nova função para Salvar o resultado do Set e registrar os pontos de saque nos logs
+    window.concluirSetAtual = () => {
+        const setNum = liveState.currentSet;
+        const resStr = `SET ${setNum}: FCA ${liveState.home} - ${liveState.away} (${state.advName})`;
+        
+        if(!state.savedResults) state.savedResults = {};
+        state.savedResults[setNum] = { home: liveState.home, away: liveState.away, adv: state.advName };
+
+        state.logs.push(`✅ ${resStr}`);
+
+        // Adicionar relatório de pontos no serviço ao log
+        const serveStats = liveState.servePointsByPlayer[setNum];
+        if (serveStats && Object.keys(serveStats).length > 0) {
+            let details = Object.entries(serveStats)
+                .map(([num, pts]) => `Nº${num} (${getDisplayName(num)}): ${pts} pts no saque`)
+                .join(' | ');
+            state.logs.push(`📊 Pontos no Serviço (Set ${setNum}): ${details}`);
+        }
+
+        sync();
+        alert(`Resultado do Set ${setNum} salvo com sucesso!\n${resStr}`);
     };
 
     function checkLiberoRotationRule() {
@@ -1274,6 +1316,18 @@
         }).join('');
         document.getElementById('logs-container').innerHTML = (state.logs || []).map(l => `<div class="log-item">${l}</div>`).join('') || "<p style='text-align:center; color:var(--gray-light); font-size:0.8rem;'>Sem registos salvos de sets.</p>";
     }
+
+    window.exportarLogsTxt = () => {
+        if(!state.logs || state.logs.length === 0) { alert("Sem logs para exportar."); return; }
+        let textoExport = `REGISTOS DE JOGO: FCA vs ${state.advName}\nCompetição: ${state.gameName}\nData: ${state.gameDate}\n\n` + state.logs.join('\n');
+        let blob = new Blob([textoExport], { type: "text/plain;charset=utf-8" });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = `Log_Jogo_${state.advName.replace(/\s+/g, '_')}.txt`;
+        a.click();
+    };
+
     window.clearLogs = () => { if(confirm("Limpar todo o histórico de jogo?")) { state.logs = []; sync(); } };
 </script>
 </body>
