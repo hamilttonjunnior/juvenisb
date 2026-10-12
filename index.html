@@ -988,6 +988,14 @@
     
     window.initLiveSet = () => {
         const s = liveState.currentSet;
+        // Se já existe um resultado salvo para este set na memória, carrega o placar
+        if (state.savedResults && state.savedResults[s]) {
+            liveState.home = state.savedResults[s].home;
+            liveState.away = state.savedResults[s].away;
+        } else {
+            liveState.home = 0;
+            liveState.away = 0;
+        }
         liveState.originalLineup = [state.sets[`s${s}p4`] || "?", state.sets[`s${s}p3`] || "?", state.sets[`s${s}p2`] || "?", state.sets[`s${s}p5`] || "?", state.sets[`s${s}p6`] || "?", state.sets[`s${s}p1`] || "?"];
         liveState.currentLineup = [...liveState.originalLineup];
         liveState.substitutesLineup = [null, null, null, null, null, null];
@@ -1011,21 +1019,12 @@
     
     window.confirmChangeSet = (novoSet) => {
         const setAntigo = liveState.currentSet;
-        // Se houver pontos registados no set atual e ele ainda não estiver salvo, pergunta ao utilizador se quer guardar
         if ((liveState.home > 0 || liveState.away > 0) && (!state.savedResults || !state.savedResults[setAntigo])) {
             if (confirm(`Tem pontos registados no Set ${setAntigo} (FCA ${liveState.home} - ${liveState.away} ${state.advName}) que ainda não foram salvos.\nDeseja salvar o resultado do Set ${setAntigo} antes de mudar?`)) {
                 concluirSetAtual();
             }
         }
         liveState.currentSet = novoSet;
-        if(state.savedResults && state.savedResults[novoSet]) {
-            liveState.home = state.savedResults[novoSet].home;
-            liveState.away = state.savedResults[novoSet].away;
-        } else {
-            liveState.home = 0;
-            liveState.away = 0;
-        }
-        sync();
         initLiveSet();
     };
     
@@ -1079,9 +1078,7 @@
         const setNum = parseInt(liveState.currentSet);
         const maxPontos = (setNum === 5) ? 15 : 25;
 
-        // Verifica se alguma equipa atingiu ou ultrapassou o limite e tem pelo menos 2 pontos de vantagem
         if ((h >= maxPontos || a >= maxPontos) && Math.abs(h - a) >= 2) {
-            // Verifica se já foi salvo para evitar múltiplos alertas no mesmo set
             if (!state.savedResults || !state.savedResults[liveState.currentSet]) {
                 concluirSetAtual();
                 alert(`🏁 SET ${liveState.currentSet} ENCERRADO AUTOMATICAMENTE!\nPlacar Final: FCA ${h} - ${a} (${state.advName})`);
@@ -1356,6 +1353,13 @@
             liveState.subsCount[liveState.currentSet] = 0;
             liveState.usedSubstitutes[liveState.currentSet] = [];
             liveState.closedPositions[liveState.currentSet] = [];
+            
+            // Remove o resultado salvo deste set para que ele zere de verdade
+            if (state.savedResults && state.savedResults[liveState.currentSet]) {
+                delete state.savedResults[liveState.currentSet];
+                sync();
+            }
+
             initLiveSet(); 
         } 
     };
@@ -1394,7 +1398,7 @@
             let extraClass = "";
             if (isExceptional) extraClass = "exceptional-active";
             else if (isLibero) extraClass = "libero-active";
-            else if (isSetter) extraClass = "setter-active"; // Passadora destacada com cor própria
+            else if (isSetter) extraClass = "setter-active";
             else if (isSubstitutedActive) extraClass = "substitute-active";
 
             const nameShow = getDisplayName(num);
