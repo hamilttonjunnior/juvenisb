@@ -143,7 +143,6 @@
         .sub-return-hint { background: rgba(245, 158, 11, 0.15) !important; border: 1px solid var(--sub-fixed) !important; color: #fef3c7 !important; }
         .btn-exceptional-trigger { background: rgba(168, 85, 247, 0.2) !important; border: 1px solid #a855f7 !important; color: #f0abfc !important; margin-top: 10px !important; }
 
-        /* Container PDF em estilo visível para geração exata pelo canvas */
         #pdf-template-container {
             display: none;
             width: 700px;
@@ -613,7 +612,7 @@
             });
         }
 
-        // Limpa placares e métricas de jogo, mas preserva a formação de quadra já preenchida
+        // Limpa dados de placar e resultados passados
         state.advName = "ADV";
         state.logs = [];
         state.scoutData = {};
@@ -622,9 +621,13 @@
         state.liveStatesBySet = {};
         state.lastGameTimestamp = Date.now();
 
+        // Garante que o Set 1 da Live carrega imediatamente a formação definida na aba Quadra
+        const s = "1";
+        const lineupBase = [state.sets[`s${s}p4`] || "?", state.sets[`s${s}p3`] || "?", state.sets[`s${s}p2`] || "?", state.sets[`s${s}p5`] || "?", state.sets[`s${s}p6`] || "?", state.sets[`s${s}p1`] || "?"];
+
         liveState = { 
             home: 0, away: 0, serving: 'home', initialServer: 'home',
-            currentLineup: [], originalLineup: [], substitutesLineup: [], 
+            currentLineup: [...lineupBase], originalLineup: [...lineupBase], substitutesLineup: [null, null, null, null, null, null], 
             exceptionalLineup: [false, false, false, false, false, false],
             closedPositions: [], usedSubstitutes: [], currentSet: "1", subsCount: 0,
             analyticPoints: { aces: 0, breaks: 0, sideouts: 0 }, servePointsByPlayer: {}
@@ -633,7 +636,7 @@
         sync();
         render();
         renderScoutInterface();
-        initLiveSet();
+        renderLive();
     }
 
     window.confirmarNovoJogoManual = () => {
@@ -1007,7 +1010,7 @@
         printWindow.document.close();
     };
 
-    // GERAÇÃO CORRIGIDA DE RELATÓRIO PDF (SOLUCIONA O PROBLEMA DE PÁGINA EM BRANCO)
+    // GERAÇÃO DO PDF REINTEGRANDO OS ACES/PONTOS DE SAQUE POR JOGADORA
     window.gerarRelatorioPDF = () => {
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
         const container = document.getElementById('pdf-template-container');
@@ -1020,16 +1023,26 @@
             const liveS = state.liveStatesBySet && state.liveStatesBySet[setNum] ? state.liveStatesBySet[setNum] : null;
             const analitico = liveS ? liveS.analyticPoints : { aces: 0, breaks: 0, sideouts: 0 };
             
+            // Mapeamento detalhado de saques por jogadora
+            let serveDetails = "";
+            if (liveS && liveS.servePointsByPlayer && Object.keys(liveS.servePointsByPlayer).length > 0) {
+                let list = Object.entries(liveS.servePointsByPlayer)
+                    .map(([num, pts]) => `Nº ${num} (${getDisplayName(num)}): <strong>${pts} pts</strong>`)
+                    .join(' | ');
+                serveDetails = `<div style="margin-top: 4px; font-size: 10px; color: #1e293b; background: #e2e8f0; padding: 4px 8px; border-radius: 4px;">⚡ <strong>Detalhamento de Saque (Aces/Pontos):</strong> ${list}</div>`;
+            }
+
             setsHTML += `
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
                     <div style="font-weight: bold; font-size: 13px; color: #0f172a; margin-bottom: 4px; text-transform: uppercase;">
                         SET ${setNum} — Placar Final: FCA ${res.home} × ${res.away} ${res.adv}
                     </div>
                     <div style="font-size: 11px; color: #475569;">
-                        ⚡ <strong>Aces:</strong> ${analitico.aces} | 
+                        ⚡ <strong>Aces (Totais):</strong> ${analitico.aces} | 
                         🔄 <strong>Break Points:</strong> ${analitico.breaks} | 
                         🎯 <strong>Side Outs:</strong> ${analitico.sideouts}
                     </div>
+                    ${serveDetails}
                 </div>
             `;
         });
@@ -1064,7 +1077,7 @@
                 scoutSummaryTableHtml += `
                     <tr>
                         <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; text-align: left;">Nº ${a.n} - ${getDisplayName(a)}</td>
-                        <td style="border: 1px solid #cbd5e1; padding: 6px;">${serv.attempts > 0 ? `${serv.efficiency}%` : '-'}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 6px;">${serv.attempts > 0 ? `${serv.points} Aces (${serv.efficiency}%)` : '-'}</td>
                         <td style="border: 1px solid #cbd5e1; padding: 6px;">${rec.attempts > 0 ? `${rec.quality}%` : '-'}</td>
                         <td style="border: 1px solid #cbd5e1; padding: 6px;">${atk.attempts > 0 ? `${atk.efficiency}%` : '-'}</td>
                         <td style="border: 1px solid #cbd5e1; padding: 6px;">${bloc.attempts > 0 ? `${bloc.efficiency}%` : '-'}</td>
@@ -1074,12 +1087,12 @@
         });
 
         let scoutSectionHtml = temScoutReg ? `
-            <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #f59e0b; padding-left: 8px; margin: 20px 0 10px 0;">Resumo Geral de Rendimento das Atletas</h3>
+            <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #f59e0b; padding-left: 8px; margin: 20px 0 10px 0;">Resumo Geral de Rendimento e Saques</h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center; margin-bottom: 15px;">
                 <thead>
                     <tr style="background: #e2e8f0; color: #0f172a;">
                         <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: left;">Atleta</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 6px;">Saque (Eficácia)</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 6px;">Saque (Aces / Eficiência)</th>
                         <th style="border: 1px solid #cbd5e1; padding: 6px;">Recepção (Qualidade)</th>
                         <th style="border: 1px solid #cbd5e1; padding: 6px;">Ataque (Eficácia)</th>
                         <th style="border: 1px solid #cbd5e1; padding: 6px;">Bloqueio (Eficácia)</th>
@@ -1101,7 +1114,7 @@
                 </div>
             </div>
 
-            <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #2563eb; padding-left: 8px; margin: 15px 0 10px 0;">Placar Geral dos Sets</h3>
+            <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #2563eb; padding-left: 8px; margin: 15px 0 10px 0;">Placar Geral dos Sets e Saques</h3>
             ${setsHTML}
 
             ${scoutSectionHtml}
@@ -1200,7 +1213,6 @@
     };
     window.toggle = (n) => { state.conv = state.conv.includes(n) ? state.conv.filter(i => i !== n) : [...state.conv, n]; sync(); render(); };
     
-    // Atualiza a posição de quadra e reflete diretamente na Live se o set não estiver em andamento
     window.updatePos = (key, val) => { 
         state.sets[key] = val; 
         const s = liveState.currentSet;
@@ -1418,7 +1430,7 @@
         const analitico = liveState.analyticPoints || { aces: 0, breaks: 0, sideouts: 0 };
         state.logs.push(`✅ ${resStr} [Aces: ${analitico.aces} | Breaks: ${analitico.breaks} | SideOuts: ${analitico.sideouts}]`);
 
-        const serveStats = liveState.servePointsByPlayer ? liveState.servePointsByPlayer[setNum] : null;
+        const serveStats = liveState.servePointsByPlayer ? liveState.servePointsByPlayer : null;
         if (serveStats && Object.keys(serveStats).length > 0) {
             let details = Object.entries(serveStats)
                 .map(([num, pts]) => `Nº${num} (${getDisplayName(num)}): ${pts} pts no saque`)
