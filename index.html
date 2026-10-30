@@ -143,15 +143,14 @@
         .sub-return-hint { background: rgba(245, 158, 11, 0.15) !important; border: 1px solid var(--sub-fixed) !important; color: #fef3c7 !important; }
         .btn-exceptional-trigger { background: rgba(168, 85, 247, 0.2) !important; border: 1px solid #a855f7 !important; color: #f0abfc !important; margin-top: 10px !important; }
 
-        /* Container PDF fora da viewport visível para correta captura sem piscar */
+        /* Container PDF em estilo visível para geração exata pelo canvas */
         #pdf-template-container {
-            position: fixed;
-            left: -9999px;
-            top: 0;
-            width: 750px;
+            display: none;
+            width: 700px;
             background: #ffffff;
-            z-index: -1;
-            display: block;
+            color: #1e293b;
+            padding: 20px;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -200,7 +199,7 @@
             <div style="flex:1;"><label>Hora</label><input type="text" id="game-time" placeholder="16H" onchange="sync()"></div>
         </div>
         <button class="btn-whatsapp" onclick="gerarMensagem()"><span>💬</span> Copiar WhatsApp</button>
-        <button class="btn-new-game" onclick="confirmarNovoJogoManual()"><span>➕</span> Iniciar Novo Jogo (Zerar Tudo)</button>
+        <button class="btn-new-game" onclick="confirmarNovoJogoManual()"><span>➕</span> Iniciar Novo Jogo (Manter Plantel)</button>
     </div>
     
     <div id="athlete-list"></div>
@@ -588,10 +587,9 @@
         return String(ath.n);
     }
 
-    // VERIFICAÇÃO AUTOMÁTICA DE EXPIRAÇÃO DE JOGO (48 HORAS / 2 DIAS)
     function verificarEExecutarResetAutomatico() {
         const AGORA = Date.now();
-        const LIMITE_MS = 48 * 60 * 60 * 1000; // 48 horas em ms
+        const LIMITE_MS = 48 * 60 * 60 * 1000;
 
         if (state.lastGameTimestamp && (AGORA - state.lastGameTimestamp > LIMITE_MS)) {
             let temJogoValido = (Object.keys(state.savedResults || {}).length > 0) || (state.logs && state.logs.length > 0);
@@ -604,7 +602,6 @@
     function executarResetDeNovoJogo(isAutomatico = false) {
         if (!state.gameHistory) state.gameHistory = [];
         
-        // Arquivar partida passada no histórico se possuir dados registrados
         if (Object.keys(state.savedResults || {}).length > 0 || (state.logs && state.logs.length > 0)) {
             state.gameHistory.push({
                 dataJogo: state.gameDate,
@@ -616,8 +613,7 @@
             });
         }
 
-        // Limpar dados para a nova partida
-        state.sets = {};
+        // Limpa placares e métricas de jogo, mas preserva a formação de quadra já preenchida
         state.advName = "ADV";
         state.logs = [];
         state.scoutData = {};
@@ -638,16 +634,12 @@
         render();
         renderScoutInterface();
         initLiveSet();
-
-        if (isAutomatico) {
-            console.log("Novo dia detectado. Sistema zerou os dados do jogo anterior automaticamente.");
-        }
     }
 
     window.confirmarNovoJogoManual = () => {
-        if (confirm("Deseja ZERAR o placar, formações e estatísticas para iniciar um NOVO JOGO?\nO histórico anterior será arquivado com segurança.")) {
+        if (confirm("Deseja ZERAR o placar, substituições e estatísticas para um NOVO JOGO?\n(A escalação de quadra será mantida)")) {
             executarResetDeNovoJogo(false);
-            alert("✨ Novo jogo iniciado com sucesso!");
+            alert("✨ Novo jogo iniciado!");
         }
     };
 
@@ -889,7 +881,6 @@
                 let atk = calculateActionStats(raw.attack);
                 let atkSO = calculateActionStats(raw.attackSO);
                 let bloc = calculateActionStats(raw.block);
-                let def = calculateActionStats(raw.defense);
 
                 let ptoAtleta = serv.points + atk.points + atkSO.points + bloc.points;
                 pontosPropriosSet += ptoAtleta;
@@ -1016,7 +1007,7 @@
         printWindow.document.close();
     };
 
-    // GERAÇÃO COMPLETA E ESTILIZADA DE RELATÓRIO PDF EM ARQUIVO DOWNLOADABLE
+    // GERAÇÃO CORRIGIDA DE RELATÓRIO PDF (SOLUCIONA O PROBLEMA DE PÁGINA EM BRANCO)
     window.gerarRelatorioPDF = () => {
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
         const container = document.getElementById('pdf-template-container');
@@ -1047,7 +1038,6 @@
             setsHTML = `<p style="font-style: italic; color: #64748b;">Nenhum set foi finalizado/salvo nesta partida.</p>`;
         }
 
-        // Tabela resumida de Scout para o PDF
         let scoutSummaryTableHtml = "";
         let temScoutReg = false;
 
@@ -1100,43 +1090,47 @@
         ` : '';
 
         container.innerHTML = `
-            <div style="font-family: Arial, sans-serif; color: #1e293b; background: #ffffff; padding: 25px; width: 700px; box-sizing: border-box;">
-                <div style="border-bottom: 3px solid #0f172a; padding-bottom: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div>
-                        <h1 style="margin: 0; font-size: 18px; color: #0f172a; text-transform: uppercase;">Relatório Tático Oficial — Volei Pro</h1>
-                        <p style="margin: 4px 0 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;">FC Académicos (Juvenis B) vs ${state.advName}</p>
-                    </div>
-                    <div style="text-align: right; font-size: 10px; color: #64748b;">
-                        <div><strong>Data:</strong> ${state.gameDate} (${state.gameTime})</div>
-                        <div><strong>Local:</strong> ${pav}</div>
-                    </div>
+            <div style="border-bottom: 3px solid #0f172a; padding-bottom: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <h1 style="margin: 0; font-size: 18px; color: #0f172a; text-transform: uppercase;">Relatório Tático Oficial — Volei Pro</h1>
+                    <p style="margin: 4px 0 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;">FC Académicos (Juvenis B) vs ${state.advName}</p>
                 </div>
-
-                <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #2563eb; padding-left: 8px; margin: 15px 0 10px 0;">Placar Geral dos Sets</h3>
-                ${setsHTML}
-
-                ${scoutSectionHtml}
-
-                <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #059669; padding-left: 8px; margin: 20px 0 10px 0;">Histórico e Ocorrências da Partida</h3>
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 10px; max-height: 250px; overflow-y: auto;">
-                    ${(state.logs || []).map(l => `<div style="padding: 4px 0; border-bottom: 1px solid #f1f5f9;">${l}</div>`).join('') || 'Sem registos de logs.'}
-                </div>
-
-                <div style="margin-top: 30px; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px;">
-                    Gerado automaticamente pela plataforma Volei Pro DataVolley Engine — FC Académicos
+                <div style="text-align: right; font-size: 10px; color: #64748b;">
+                    <div><strong>Data:</strong> ${state.gameDate} (${state.gameTime})</div>
+                    <div><strong>Local:</strong> ${pav}</div>
                 </div>
             </div>
+
+            <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #2563eb; padding-left: 8px; margin: 15px 0 10px 0;">Placar Geral dos Sets</h3>
+            ${setsHTML}
+
+            ${scoutSectionHtml}
+
+            <h3 style="font-size: 13px; text-transform: uppercase; color: #0f172a; border-left: 4px solid #059669; padding-left: 8px; margin: 20px 0 10px 0;">Histórico e Ocorrências da Partida</h3>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 10px; max-height: 250px; overflow-y: auto;">
+                ${(state.logs || []).map(l => `<div style="padding: 4px 0; border-bottom: 1px solid #f1f5f9;">${l}</div>`).join('') || 'Sem registos de logs.'}
+            </div>
+
+            <div style="margin-top: 30px; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                Gerado automaticamente pela plataforma Volei Pro DataVolley Engine — FC Académicos
+            </div>
         `;
+
+        container.style.display = 'block';
 
         const opt = {
             margin:       10,
             filename:     `Relatorio_Jogo_${state.advName.replace(/\s+/g, '_')}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        html2pdf().from(container).set(opt).save();
+        setTimeout(() => {
+            html2pdf().from(container).set(opt).save().then(() => {
+                container.style.display = 'none';
+            });
+        }, 150);
     };
 
     window.addAthlete = () => {
@@ -1205,7 +1199,18 @@
         if(doSync) sync();
     };
     window.toggle = (n) => { state.conv = state.conv.includes(n) ? state.conv.filter(i => i !== n) : [...state.conv, n]; sync(); render(); };
-    window.updatePos = (key, val) => { state.sets[key] = val; sync(); render(); };
+    
+    // Atualiza a posição de quadra e reflete diretamente na Live se o set não estiver em andamento
+    window.updatePos = (key, val) => { 
+        state.sets[key] = val; 
+        const s = liveState.currentSet;
+        if (liveState.home === 0 && liveState.away === 0) {
+            liveState.originalLineup = [state.sets[`s${s}p4`] || "?", state.sets[`s${s}p3`] || "?", state.sets[`s${s}p2`] || "?", state.sets[`s${s}p5`] || "?", state.sets[`s${s}p6`] || "?", state.sets[`s${s}p1`] || "?"];
+            liveState.currentLineup = [...liveState.originalLineup];
+        }
+        sync(); 
+        render(); 
+    };
     
     window.gerarMensagem = () => {
         const pav = state.pavilion === 'outro' ? state.otherPavilion : state.pavilion;
